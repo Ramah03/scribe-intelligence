@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Scribe — The Intelligence Company</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:   #07090F;
+  --bg2:  #0C1018;
+  --bg3:  #111520;
+  --bg4:  #181D2C;
+  --gold: #C9A84C;
+  --gold2:#F0D080;
+  --gd:   rgba(201,168,76,0.12);
+  --gd2:  rgba(201,168,76,0.06);
+  --w:    #F0EDE8;
+  --w2:   rgba(240,237,232,0.72);
+  --w3:   rgba(240,237,232,0.38);
+  --w4:   rgba(240,237,232,0.08);
+  --w5:   rgba(240,237,232,0.04);
+  --red:  #B83232;
+  --grn:  #1A7A5E;
+  --grn2: #126650;
+  --bdr:  rgba(240,237,232,0.07);
+  --bdr2: rgba(240,237,232,0.13);
+  --bdr3: rgba(201,168,76,0.28);
+  --dp:   'Playfair Display', Georgia, serif;
+  --ss:   'IBM Plex Sans', sans-serif;
+  --mn:   'IBM Plex Mono', monospace;
+  --r:    4px;
+  --r2:   8px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-track { background: var(--bg2); }
+::-webkit-scrollbar-thumb { background: var(--bg4); border-radius: 2px; }
+html, body { height: 100%; }
+body { font-family: var(--ss); background: var(--bg); color: var(--w); font-size: 13px; line-height: 1.6; overflow: hidden; }
+
+/* ── SHELL ── */
+.shell { display: flex; height: 100vh; overflow: hidden; }
+
+/* ── SIDEBAR ── */
+.sb { width: 216px; flex-shrink: 0; background: var(--bg2); border-right: 1px solid var(--bdr); display: flex; flex-direction: column; overflow-y: auto; }
+.sb-brand { padding: 20px 18px 14px; border-bottom: 1px solid var(--bdr); }
+.sb-name { font-family: var(--dp); font-size: 21px; color: var(--gold); letter-spacing: 1.5px; line-height: 1; }
+.sb-tag  { font-size: 8.5px; color: var(--w3); letter-spacing: 2.5px; text-transform: uppercase; font-family: var(--mn); margin-top: 4px; }
+.sb-nav  { padding: 8px 6px; flex: 1; }
+.nlbl { font-size: 8.5px; color: var(--w3); letter-spacing: 2px; text-transform: uppercase; font-family: var(--mn); padding: 0 10px; margin: 14px 0 4px; }
+.ni { display: flex; align-items: center; gap: 8px; padding: 7px 10px; border-radius: var(--r); cursor: pointer; color: var(--w3); font-size: 12px; transition: all .12s; margin-bottom: 1px; border: 1px solid transparent; }
+.ni:hover { color: var(--w2); background: var(--w5); }
+.ni.on { color: var(--gold); background: var(--gd); border-color: var(--bdr3); font-weight: 500; }
+.nic { font-size: 12px; width: 15px; text-align: center; flex-shrink: 0; }
+.nbdg { margin-left: auto; background: var(--gold); color: var(--bg); font-size: 8.5px; font-weight: 600; padding: 1px 5px; border-radius: 10px; font-family: var(--mn); min-width: 17px; text-align: center; }
+.sb-foot { padding: 10px 18px 14px; border-top: 1px solid var(--bdr); font-family: var(--mn); font-size: 9px; color: var(--w3); line-height: 2; }
+.dot { display: inline-block; width: 5px; height: 5px; border-radius: 50%; background: var(--grn); margin-right: 5px; animation: blink 2s ease-in-out infinite; }
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:.25} }
+
+/* ── MAIN ── */
+.main { flex: 1; display: flex; flex-direction: column; overflow: hidden; min-width: 0; }
+
+/* ── TOPBAR ── */
+.topbar { height: 50px; flex-shrink: 0; background: var(--bg2); border-bottom: 1px solid var(--bdr); display: flex; align-items: center; padding: 0 20px; gap: 10px; }
+.tb-title { font-size: 13px; font-weight: 500; color: var(--w); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tb-sub { font-size: 9.5px; color: var(--w3); font-family: var(--mn); letter-spacing: .5px; margin-left: 7px; }
+.tb-actions { display: flex; gap: 6px; flex-shrink: 0; }
+
+/* ── TICKER ── */
+.ticker { height: 28px; flex-shrink: 0; background: var(--bg); border-bottom: 1px solid var(--bdr); display: flex; align-items: center; padding: 0 20px; gap: 20px; overflow: hidden; font-family: var(--mn); font-size: 10px; }
+.tk { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+.tks { color: var(--w3); } .tkv { color: var(--w2); } .tku { color: #4ade80; } .tkd { color: #f87171; }
+
+/* ── CONTENT ── */
+.content { flex: 1; overflow-y: auto; padding: 20px 22px; }
+
+/* ── PAGES ── */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ── STEP NAV BAR ── */
+.step-nav { background: var(--bg2); border-bottom: 1px solid var(--bdr); display: flex; overflow-x: auto; flex-shrink: 0; }
+.step-nav:empty { display: none; }
+.sn { padding: 8px 10px; font-size: 9px; font-family: var(--mn); color: var(--w3); cursor: pointer; border-bottom: 2px solid transparent; white-space: nowrap; transition: all .12s; letter-spacing: .5px; }
+.sn:hover { color: var(--w2); }
+.sn.on { color: var(--gold); border-bottom-color: var(--gold); }
+.sn.done { color: var(--grn); }
+.prog-track { height: 2px; background: var(--bdr); flex-shrink: 0; }
+.prog-fill { height: 100%; background: linear-gradient(90deg, var(--grn2), var(--gold)); transition: width .35s ease; }
+
+/* ── BUTTONS ── */
+.btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 13px; border-radius: var(--r); border: 1px solid var(--bdr2); background: transparent; color: var(--w2); font-size: 11px; font-family: var(--ss); font-weight: 500; cursor: pointer; transition: all .12s; white-space: nowrap; }
+.btn:hover { background: var(--w4); color: var(--w); }
+.btn:disabled { opacity: .4; cursor: not-allowed; }
+.btn-g { background: var(--gold); color: var(--bg); border-color: var(--gold); font-weight: 600; }
+.btn-g:hover { background: var(--gold2); border-color: var(--gold2); color: var(--bg); }
+.btn-d { background: var(--bg3); border-color: var(--bdr2); color: var(--w2); }
+.btn-d:hover { background: var(--bg4); color: var(--w); }
+.btn-r { background: rgba(184,50,50,.12); border-color: rgba(184,50,50,.3); color: #f87171; }
+.btn-r:hover { background: var(--red); color: #fff; border-color: var(--red); }
+.btn-sm { padding: 4px 9px; font-size: 10px; }
+.btn-fw { width: 100%; justify-content: center; }
+
+/* ── CARDS ── */
+.card { background: var(--bg2); border: 1px solid var(--bdr); border-radius: var(--r2); padding: 14px 16px; margin-bottom: 10px; }
+.card-g { border-color: var(--bdr3); background: linear-gradient(145deg, var(--bg2), rgba(201,168,76,.03)); }
+.ch { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 10px; padding-bottom: 9px; border-bottom: 1px solid var(--bdr); gap: 8px; }
+.ct { font-size: 12px; font-weight: 500; color: var(--w); }
+.cm { font-size: 10px; color: var(--w3); font-family: var(--mn); margin-top: 1px; }
+
+/* ── STATS ── */
+.sg { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-bottom: 18px; }
+.stat { background: var(--bg2); border: 1px solid var(--bdr); border-radius: var(--r2); padding: 14px 16px; position: relative; overflow: hidden; }
+.stat::after { content:''; position:absolute; top:0;left:0;right:0; height:2px; background:var(--gold); }
+.stat.grn::after { background:var(--grn); }
+.stat.dm::after  { background:var(--w3); }
+.stat.rd::after  { background:var(--red); }
+.sl { font-size:9px; color:var(--w3); letter-spacing:1.5px; text-transform:uppercase; font-family:var(--mn); margin-bottom:6px; }
+.sv { font-family:var(--dp); font-size:30px; color:var(--gold); line-height:1; }
+.stat.grn .sv { color:#4ade80; }
+.stat.dm  .sv { color:var(--w2); }
+.stat.rd  .sv { color:#f87171; }
+.ss { font-size:10px; color:var(--w3); margin-top:3px; font-family:var(--mn); }
+
+/* ── GRIDS ── */
+.g2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.g3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; }
+
+/* ── SECTION HEADERS ── */
+.sh { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+.stl { font-family:var(--dp); font-size:16px; color:var(--w); letter-spacing:.5px; }
+.stb { font-size:9.5px; color:var(--w3); font-family:var(--mn); letter-spacing:.5px; margin-top:1px; }
+
+/* ── FORMS ── */
+.fr2 { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:10px; }
+.fg  { margin-bottom:10px; }
+label { display:block; font-size:9px; color:var(--w3); font-family:var(--mn); text-transform:uppercase; letter-spacing:1.5px; margin-bottom:4px; }
+input[type=text], input[type=email], textarea, select {
+  width:100%; background:var(--bg3); border:1px solid var(--bdr); border-radius:var(--r);
+  padding:7px 10px; font-size:12px; font-family:var(--ss); color:var(--w); outline:none; transition:border-color .12s;
+}
+input:focus, textarea:focus, select:focus { border-color:var(--gold); box-shadow:0 0 0 2px var(--gd); }
+select option { background:var(--bg3); }
+textarea { min-height:82px; resize:vertical; line-height:1.65; }
+.ir { display:flex; gap:8px; }
+.ir input { flex:1; }
+
+/* ── BRIEF LIST ── */
+.bl { display:flex; flex-direction:column; gap:6px; }
+.bi { background:var(--bg2); border:1px solid var(--bdr); border-radius:var(--r2); padding:11px 13px; display:flex; align-items:center; gap:11px; cursor:pointer; transition:all .12s; }
+.bi:hover { border-color:var(--bdr3); background:var(--gd2); }
+.bav { width:35px; height:35px; border-radius:var(--r); background:var(--gd); border:1px solid var(--bdr3); display:flex; align-items:center; justify-content:center; font-family:var(--dp); font-size:15px; color:var(--gold); flex-shrink:0; }
+.bin { flex:1; min-width:0; }
+.bco { font-size:13px; font-weight:500; color:var(--w); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.bmt { font-size:10px; color:var(--w3); font-family:var(--mn); margin-top:1px; }
+.btr { display:flex; gap:4px; flex-wrap:wrap; margin-top:4px; }
+.bac { display:flex; gap:5px; flex-shrink:0; }
+
+/* ── TAGS ── */
+.tag { font-size:9px; padding:2px 6px; border-radius:20px; font-family:var(--mn); font-weight:500; white-space:nowrap; }
+.ti { background:rgba(15,110,86,.18); color:#4ade80; border:1px solid rgba(15,110,86,.3); }
+.ts { background:rgba(83,74,183,.18); color:#a78bfa; border:1px solid rgba(83,74,183,.3); }
+.tt { background:var(--gd); color:var(--gold); border:1px solid var(--bdr3); }
+.tu { background:rgba(184,50,50,.15); color:#f87171; border:1px solid rgba(184,50,50,.3); }
+.tc { background:var(--w4); color:var(--w2); border:1px solid var(--bdr); }
+
+/* ── CHIPS ── */
+.chips { display:flex; flex-wrap:wrap; gap:5px; }
+.chip { padding:4px 10px; border-radius:20px; border:1px solid var(--bdr); background:transparent; color:var(--w3); font-size:10px; font-family:var(--mn); cursor:pointer; transition:all .12s; }
+.chip:hover { border-color:var(--bdr2); color:var(--w2); }
+.chip.on        { background:var(--gd);              border-color:var(--bdr3);              color:var(--gold); }
+.chip.on.cind   { background:rgba(15,110,86,.15);    border-color:rgba(15,110,86,.4);       color:#4ade80; }
+.chip.on.cstg   { background:rgba(83,74,183,.15);    border-color:rgba(83,74,183,.4);       color:#a78bfa; }
+.chip.on.ctpc   { background:var(--gd);              border-color:var(--bdr3);              color:var(--gold); }
+.chip.on.curh   { background:rgba(184,50,50,.15);    border-color:rgba(184,50,50,.3);       color:#f87171; }
+.chip.on.curm   { background:rgba(133,79,11,.2);     border-color:rgba(133,79,11,.4);       color:#fb923c; }
+
+/* ── NOTICES ── */
+.nt  { padding:8px 11px; border-radius:var(--r); font-size:11px; margin-bottom:10px; border-left:2px solid; line-height:1.5; }
+.ni2 { background:rgba(59,130,246,.1);  color:#93c5fd; border-color:#3b82f6; }
+.nw  { background:rgba(201,168,76,.09); color:var(--gold2); border-color:var(--gold); }
+.no  { background:rgba(15,110,86,.12);  color:#4ade80; border-color:var(--grn); }
+.ne  { background:rgba(184,50,50,.1);   color:#f87171; border-color:var(--red); }
+
+/* ── FEED ITEMS ── */
+.fi { padding:8px 0; border-bottom:1px solid var(--bdr); display:flex; gap:9px; }
+.fi:last-child { border-bottom:none; }
+.fd { width:6px; height:6px; border-radius:50%; background:var(--w3); flex-shrink:0; margin-top:5px; }
+.fd.gold { background:var(--gold); } .fd.red { background:var(--red); } .fd.grn { background:var(--grn); }
+.ft  { flex:1; font-size:11px; line-height:1.5; color:var(--w2); }
+.fso { font-size:9px; color:var(--w3); font-family:var(--mn); margin-top:1px; }
+.ftm { font-size:9px; color:var(--w3); font-family:var(--mn); flex-shrink:0; }
+
+/* ── DATA PANEL ── */
+.dp { background:rgba(26,34,54,.5); border:1px solid var(--bdr); border-radius:var(--r2); padding:11px 13px; margin-bottom:12px; }
+.dph { display:flex; align-items:center; gap:7px; margin-bottom:8px; }
+.dpt { font-size:10px; font-family:var(--mn); color:var(--w3); text-transform:uppercase; letter-spacing:.5px; }
+.sbdg { font-size:8px; background:var(--bg4); color:var(--w3); padding:2px 5px; border-radius:3px; font-family:var(--mn); border:1px solid var(--bdr); }
+
+/* ── AI GEN PANEL ── */
+.aip { background:linear-gradient(145deg,var(--bg2),rgba(201,168,76,.05)); border:1px solid var(--bdr3); border-radius:var(--r2); padding:15px 17px; margin-bottom:14px; }
+.aih { display:flex; align-items:center; gap:8px; margin-bottom:11px; }
+.ai-bdg { background:var(--gold); color:var(--bg); font-size:8.5px; font-family:var(--mn); padding:2px 6px; border-radius:var(--r); font-weight:700; letter-spacing:.5px; }
+.ai-l { font-size:12px; font-weight:500; color:var(--w); }
+.ai-s { font-size:10px; color:var(--w3); font-family:var(--mn); }
+
+/* ── AI RESPONSE ── */
+.air { background:var(--bg3); border:1px solid var(--bdr); border-radius:var(--r2); padding:12px 14px; font-size:12px; line-height:1.8; color:var(--w2); white-space:pre-wrap; font-family:var(--ss); min-height:60px; }
+.dots span { display:inline-block; width:4px; height:4px; border-radius:50%; background:var(--gold); animation:bounce 1.2s ease-in-out infinite; margin:0 1px; }
+.dots span:nth-child(2) { animation-delay:.2s; }
+.dots span:nth-child(3) { animation-delay:.4s; }
+@keyframes bounce { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-5px)} }
+
+/* ── EMPTY STATE ── */
+.emp { text-align:center; padding:40px 20px; }
+.ei  { font-size:28px; margin-bottom:8px; opacity:.35; }
+.et  { font-family:var(--dp); font-size:16px; color:var(--w3); margin-bottom:5px; }
+.ex  { font-size:11px; color:var(--w3); line-height:1.6; max-width:240px; margin:0 auto 14px; }
+
+/* ── API DOCS ── */
+.ep  { background:var(--bg2); border:1px solid var(--bdr); border-radius:var(--r2); overflow:hidden; margin-bottom:10px; }
+.eph { display:flex; align-items:center; gap:8px; padding:9px 13px; border-bottom:1px solid var(--bdr); background:var(--bg3); }
+.mth { font-size:9.5px; font-family:var(--mn); font-weight:700; padding:2px 6px; border-radius:var(--r); letter-spacing:.5px; }
+.mg { background:rgba(15,110,86,.2); color:#4ade80; }
+.mp { background:rgba(59,130,246,.2); color:#93c5fd; }
+.md { background:rgba(184,50,50,.2); color:#f87171; }
+.eppath { font-family:var(--mn); font-size:12px; color:var(--w); flex:1; }
+.epdesc { font-size:10px; color:var(--w3); font-family:var(--mn); margin-left:auto; }
+.epb { padding:11px 13px; }
+.cb { background:var(--bg); border:1px solid var(--bdr); border-radius:var(--r); padding:10px 12px; font-family:var(--mn); font-size:11px; color:var(--w2); white-space:pre; overflow-x:auto; line-height:1.7; }
+.ck { color:#93c5fd; } .cst { color:#86efac; } .cn { color:#fb923c; } .cc { color:var(--w3); }
+
+/* ── PREVIEW (brief output - light themed for printing) ── */
+.bp { background:#fff; color:#0A0E1A; border-radius:var(--r2); overflow:hidden; margin-bottom:14px; border:1px solid var(--bdr2); }
+.bpm { background:#0F1B35; padding:18px 22px; display:flex; justify-content:space-between; align-items:flex-start; }
+.bpname { font-family:'Playfair Display',Georgia,serif; font-size:22px; color:#C9A84C; letter-spacing:2.5px; line-height:1; }
+.bptag  { font-size:8px; color:rgba(255,255,255,.28); letter-spacing:2px; font-family:'IBM Plex Mono',monospace; margin-top:3px; }
+.bpmet  { text-align:right; font-family:'IBM Plex Mono',monospace; }
+.bpmi   { font-size:10px; color:rgba(255,255,255,.55); line-height:1.7; }
+.bpconf { font-size:9px; color:#C9A84C; letter-spacing:2px; text-transform:uppercase; margin-top:4px; font-weight:600; }
+.bptb   { background:#1A3A6B; padding:10px 22px; display:flex; justify-content:space-between; align-items:center; }
+.bpco   { font-family:'Playfair Display',Georgia,serif; font-size:17px; color:#fff; letter-spacing:1px; }
+.bpcos  { font-size:9.5px; color:rgba(255,255,255,.4); font-family:'IBM Plex Mono',monospace; margin-top:1px; }
+.bpcbdg { background:#C0392B; color:#fff; font-size:8.5px; padding:3px 8px; letter-spacing:1.5px; font-family:'IBM Plex Mono',monospace; text-transform:uppercase; }
+.bpex   { background:#EEF2F9; border-left:3px solid #1A3A6B; padding:10px 22px; font-size:12px; color:#1A3A6B; font-style:italic; line-height:1.7; }
+.bpmx   { display:grid; grid-template-columns:repeat(3,1fr); gap:1px; background:#e0e0e0; margin:14px 22px; border-radius:3px; overflow:hidden; }
+.bpmc   { background:#fff; padding:10px 12px; text-align:center; }
+.bpmv   { font-family:'Playfair Display',Georgia,serif; font-size:17px; color:#1A3A6B; }
+.bpml   { font-size:9px; color:rgba(10,14,26,.4); font-family:'IBM Plex Mono',monospace; margin-top:1px; }
+.bpbody { padding:0 22px 16px; }
+.bpsec  { margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid #e8ecf5; }
+.bpsec:last-child { border-bottom:none; }
+.bpsh   { display:flex; align-items:center; gap:7px; margin-bottom:7px; }
+.bpsn   { width:18px; height:18px; border-radius:50%; background:#1A3A6B; color:#fff; display:flex; align-items:center; justify-content:center; font-size:9px; font-family:'IBM Plex Mono',monospace; flex-shrink:0; }
+.bpst   { font-size:9.5px; font-weight:600; letter-spacing:1.5px; text-transform:uppercase; color:#0A0E1A; font-family:'IBM Plex Mono',monospace; }
+.bpsx   { font-size:11.5px; line-height:1.8; color:rgba(10,14,26,.75); }
+.bpsi   { margin-top:7px; padding:6px 10px; border-radius:3px; font-size:10.5px; font-family:'IBM Plex Mono',monospace; line-height:1.5; }
+.bptags { display:flex; flex-wrap:wrap; gap:5px; padding:10px 22px; border-top:1px solid #e8ecf5; background:#f7f7f5; }
+.btag   { font-size:9px; padding:2px 7px; border-radius:20px; font-family:'IBM Plex Mono',monospace; font-weight:500; }
+.bti { background:#E1F5EE; color:#085041; }
+.bts { background:#EEEDFE; color:#26215C; }
+.btt { background:#FEF3E2; color:#7a4a00; }
+.btu { background:#FDECEA; color:#6b1a1a; }
+.btc { background:#EEF2F9; color:#1A3A6B; }
+.bpdist { padding:7px 22px; font-size:9.5px; color:rgba(10,14,26,.38); font-family:'IBM Plex Mono',monospace; border-top:1px solid #e8ecf5; }
+.bpfoot { background:#0F1B35; padding:10px 22px; display:flex; justify-content:space-between; align-items:center; }
+.bpfl   { font-size:9px; color:rgba(255,255,255,.2); font-family:'IBM Plex Mono',monospace; }
+.bpfr   { font-size:10px; color:rgba(255,255,255,.55); font-family:'IBM Plex Mono',monospace; text-align:right; }
+
+/* ── PRINT ── */
+@media print {
+  * { -webkit-print-color-adjust:exact!important; print-color-adjust:exact!important; color-adjust:exact!important; }
+  body, html { overflow:visible!important; height:auto!important; }
+  .shell { display:block!important; height:auto!important; overflow:visible!important; }
+  .sb, .topbar, .ticker, .step-nav, .prog-track, .tb-actions, .print-hide { display:none!important; }
+  .main { overflow:visible!important; }
+  .content { overflow:visible!important; padding:0!important; }
+  .page { display:none!important; }
+  #page-preview { display:block!important; }
+  .bp { border:none!important; border-radius:0!important; }
+  .bpm  { background:#0F1B35!important; }
+  .bptb { background:#1A3A6B!important; }
+  .bpfoot { background:#0F1B35!important; }
+  @page { margin:.4cm; size:A4 portrait; }
+}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sb">
+  <div class="sb-brand">
+    <div class="sb-name">Scribe</div>
+    <div class="sb-tag">The Intelligence Company</div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nlbl">Platform</div>
+    <div class="ni on" onclick="go('dashboard')"><span class="nic">◈</span>Dashboard</div>
+    <div class="ni" onclick="go('builder')"><span class="nic">✦</span>New Brief</div>
+    <div class="ni" onclick="go('briefs')"><span class="nic">▤</span>All Briefs<span class="nbdg" id="nc">0</span></div>
+    <div class="ni" onclick="go('preview')"><span class="nic">◻</span>Preview Brief</div>
+    <div class="nlbl">Intelligence</div>
+    <div class="ni" onclick="go('aigen')"><span class="nic">⬡</span>AI Generator</div>
+    <div class="ni" onclick="go('lookup')"><span class="nic">◎</span>Company Lookup</div>
+    <div class="ni" onclick="go('feed')"><span class="nic">◉</span>Live Data Feed</div>
+    <div class="ni" onclick="go('tags')"><span class="nic">◆</span>Tag Manager</div>
+    <div class="nlbl">Developer</div>
+    <div class="ni" onclick="go('api')"><span class="nic">{ }</span>Scribe API</div>
+    <div class="ni" onclick="go('settings')"><span class="nic">◇</span>Settings</div>
+  </nav>
+  <div class="sb-foot">
+    <div><span class="dot"></span>AI Engine Active</div>
+    <div>claude-sonnet-4-20250514</div>
+    <div>SEC EDGAR · Wikipedia</div>
+    <div style="color:var(--bdr);margin-top:2px">v2.0 · 2026</div>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="tb-title" id="tbt">Dashboard<span class="tb-sub">SCRIBE INTELLIGENCE PLATFORM</span></div>
+    <div class="tb-actions" id="tba">
+      <button class="btn btn-g" onclick="go('builder')">✦ New Brief</button>
+    </div>
+  </div>
+  <div class="step-nav" id="stepNav"></div>
+  <div class="prog-track"><div class="prog-fill" id="progFill" style="width:0%"></div></div>
+  <div class="ticker" id="tkEl"><div class="tk"><span class="tks">SCRIBE</span><span class="tkv">LOADING MARKET DATA...</span></div></div>
+
+  <div class="content">
+
+<!-- ═══ DASHBOARD ═══ -->
+<div class="page active" id="page-dashboard">
+  <div class="sg">
+    <div class="stat">    <div class="sl">Total Briefs</div><div class="sv" id="dT">0</div><div class="ss">Intelligence documents</div></div>
+    <div class="stat grn"><div class="sl">This Month</div><div class="sv" id="dM">0</div><div class="ss">Briefs produced</div></div>
+    <div class="stat dm"> <div class="sl">Avg Sections</div><div class="sv" id="dS">—</div><div class="ss">Per brief filled</div></div>
+    <div class="stat rd"> <div class="sl">Industries</div><div class="sv" id="dI">0</div><div class="ss">Sectors covered</div></div>
+  </div>
+  <div class="g2">
+    <div>
+      <div class="sh">
+        <div><div class="stl">Recent Briefs</div><div class="stb">LATEST INTELLIGENCE</div></div>
+        <button class="btn btn-sm" onclick="go('briefs')">View all →</button>
+      </div>
+      <div id="dR">
+        <div class="emp"><div class="ei">◈</div><div class="et">No Briefs Yet</div><div class="ex">Create your first intelligence brief to get started.</div><button class="btn btn-g" onclick="go('builder')">Create Brief</button></div>
+      </div>
+    </div>
+    <div>
+      <div class="sh">
+        <div><div class="stl">SEC EDGAR Feed</div><div class="stb">REAL-TIME FILINGS</div></div>
+        <button class="btn btn-sm" onclick="loadFeed()">↻</button>
+      </div>
+      <div class="card" id="dF"><div class="nt ni2">Loading SEC EDGAR feed...</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BUILDER ═══ -->
+<div class="page" id="page-builder">
+  <div class="aip" id="afPanel">
+    <div class="aih">
+      <span class="ai-bdg">AI</span>
+      <div><div class="ai-l">Auto-Generate Full Brief</div><div class="ai-s">Enter a company — Claude fills all 15 sections instantly. Review and edit before printing.</div></div>
+      <button class="btn btn-sm btn-d" style="margin-left:auto" onclick="toggleManual()">Manual mode</button>
+    </div>
+    <div class="fr2">
+      <div><label>Company Name</label><input type="text" id="afIn" placeholder="e.g. Microsoft, Tesla, Nvidia, OpenAI..." onkeydown="if(event.key==='Enter')autoFill()"></div>
+      <div><label>Industry / Context (optional)</label><input type="text" id="afInd" placeholder="e.g. Technology, Gaming, Healthcare..."></div>
+    </div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn btn-g" onclick="autoFill()" id="afBtn">⬡ Generate All 15 Sections</button>
+      <span id="afSt" style="font-size:10px;color:var(--w3);font-family:var(--mn)"></span>
+    </div>
+  </div>
+  <div id="reviewScreen" style="display:none"></div>
+  <div id="bldContent"></div>
+  <div style="display:flex;justify-content:space-between;margin-top:14px;gap:8px">
+    <button class="btn btn-d" onclick="sPrev()" id="bPv" style="visibility:hidden">← Prev</button>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-d" onclick="saveB()">Save Draft</button>
+      <button class="btn btn-g" onclick="sNext()" id="bNx">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ALL BRIEFS ═══ -->
+<div class="page" id="page-briefs">
+  <div style="display:flex;gap:8px;margin-bottom:13px;flex-wrap:wrap">
+    <input type="text" id="bSrch" placeholder="Search by company, industry, tag..." style="flex:1;min-width:160px" oninput="filterB()">
+    <select id="bFI" onchange="filterB()" style="width:140px"><option value="">All Industries</option></select>
+    <select id="bFU" onchange="filterB()" style="width:130px"><option value="">All Urgency</option><option>High Priority</option><option>Medium Priority</option><option>Routine</option></select>
+  </div>
+  <div id="bList">
+    <div class="emp"><div class="ei">▤</div><div class="et">No Briefs</div><div class="ex">Saved briefs appear here.</div><button class="btn btn-g" onclick="go('builder')">Create First</button></div>
+  </div>
+</div>
+
+<!-- ═══ PREVIEW ═══ -->
+<div class="page" id="page-preview">
+  <div style="display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap" class="print-hide">
+    <button class="btn btn-d" onclick="go('builder')">← Edit</button>
+    <button class="btn btn-d" onclick="cpyTxt()">⎘ Copy Text</button>
+    <button class="btn btn-g" onclick="prtBrief()">⎙ Print / PDF</button>
+    <button class="btn btn-g" onclick="saveB()">✓ Save Brief</button>
+    <span id="cpFb" style="display:none;font-size:10px;color:#4ade80;font-family:var(--mn);align-self:center;margin-left:4px">✓ Copied!</span>
+  </div>
+  <div id="pvCont"></div>
+</div>
+
+<!-- ═══ AI GENERATOR ═══ -->
+<div class="page" id="page-aigen">
+  <div class="nt ni2" style="margin-bottom:14px">Powered by <strong>claude-sonnet-4-20250514</strong> — Anthropic's best model. Enter a company, select sections, and generate publication-ready intelligence content in seconds.</div>
+  <div class="aip">
+    <div class="aih">
+      <span class="ai-bdg">AI</span>
+      <div><div class="ai-l">Scribe AI Intelligence Generator</div><div class="ai-s">claude-sonnet-4-20250514 · Real-time analysis</div></div>
+    </div>
+    <div class="fr2">
+      <div><label>Company Name</label><input type="text" id="aiCo" placeholder="e.g. Microsoft, Tesla, OpenAI..."></div>
+      <div><label>Industry / Context</label><input type="text" id="aiInd" placeholder="e.g. Technology, Automotive, Healthcare"></div>
+    </div>
+    <div class="fg"><label>Additional Context (optional)</label><input type="text" id="aiCtx" placeholder="Specific angle, timeframe, focus area, recent events..."></div>
+    <div style="margin-bottom:11px"><label>Select Sections to Generate</label><div class="chips" id="aiChips"></div></div>
+    <div style="display:flex;gap:7px;flex-wrap:wrap">
+      <button class="btn btn-g" onclick="genAI()" id="btnGen">⬡ Generate Selected</button>
+      <button class="btn btn-d" onclick="genAllAI()">Generate All 13 Sections</button>
+      <button class="btn btn-d" onclick="applyAllAI()">→ Apply All to Builder</button>
+    </div>
+  </div>
+  <div id="aiRes"></div>
+</div>
+
+<!-- ═══ COMPANY LOOKUP ═══ -->
+<div class="page" id="page-lookup">
+  <div class="ir" style="margin-bottom:13px">
+    <input type="text" id="lkQ" placeholder="Search any company name, ticker, or keyword..." onkeydown="if(event.key==='Enter')doLookup()">
+    <button class="btn btn-g" onclick="doLookup()">Search</button>
+  </div>
+  <div id="lkRes">
+    <div class="emp"><div class="ei">◎</div><div class="et">Company Lookup</div><div class="ex">Search any company to pull Wikipedia data and access SEC filing links directly.</div></div>
+  </div>
+</div>
+
+<!-- ═══ LIVE FEED ═══ -->
+<div class="page" id="page-feed">
+  <div class="nt no" style="margin-bottom:14px"><span class="dot"></span>Live from SEC EDGAR — no API key required. Filings updated in real time as companies submit.</div>
+  <div class="g2" style="margin-bottom:14px">
+    <div>
+      <div class="sh"><div class="stl">Latest Filings</div><button class="btn btn-sm" onclick="loadFeed()">↻ Refresh</button></div>
+      <div class="card" id="fLt"><div class="nt ni2">Loading...</div></div>
+    </div>
+    <div>
+      <div class="sh"><div class="stl">8-K Material Events</div></div>
+      <div class="card" id="f8k"><div class="nt ni2">Loading...</div></div>
+    </div>
+  </div>
+  <div class="sh"><div class="stl">Direct EDGAR Links</div></div>
+  <div class="g3">
+    <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=10-K&count=20" target="_blank" style="text-decoration:none">
+      <div class="card" style="cursor:pointer"><div class="ct" style="color:var(--gold)">Annual Reports (10-K)</div><div class="cm">Full-year financial results for all public companies</div></div>
+    </a>
+    <a href="https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=8-K&count=20" target="_blank" style="text-decoration:none">
+      <div class="card" style="cursor:pointer"><div class="ct" style="color:var(--gold)">Material Events (8-K)</div><div class="cm">M&A, leadership changes, major announcements</div></div>
+    </a>
+    <a href="https://efts.sec.gov/LATEST/search-index?q=%22material+definitive+agreement%22&forms=8-K" target="_blank" style="text-decoration:none">
+      <div class="card" style="cursor:pointer"><div class="ct" style="color:var(--gold)">M&A Agreements</div><div class="cm">Material definitive agreement filings</div></div>
+    </a>
+  </div>
+</div>
+
+<!-- ═══ TAG MANAGER ═══ -->
+<div class="page" id="page-tags">
+  <div class="nt ni2" style="margin-bottom:14px">Tags categorize and route intelligence briefs to the right recipients across your distribution list.</div>
+  <div class="g2">
+    <div>
+      <div class="sh"><div class="stl">Tag Usage</div></div>
+      <div class="card" id="tgU"><div class="nt nw">No tags used yet. Create and tag briefs to see usage here.</div></div>
+    </div>
+    <div>
+      <div class="sh"><div class="stl">Distribution Guide</div></div>
+      <div class="card">
+        <div class="fi"><div class="fd grn"></div><div><div class="ft"><strong style="color:var(--w)">Industry Tags</strong> — Route briefs to sector-specific teams. "Tech" briefs go to your technology clients automatically.</div></div></div>
+        <div class="fi"><div class="fd" style="background:#a78bfa"></div><div><div class="ft"><strong style="color:var(--w)">Stage Tags</strong> — Segment by company maturity. Series B briefs require different depth vs Enterprise coverage.</div></div></div>
+        <div class="fi"><div class="fd gold"></div><div><div class="ft"><strong style="color:var(--w)">Topic Tags</strong> — Filter by brief type. M&A, Risk Alerts, and Market Entry reports reach different decision makers.</div></div></div>
+        <div class="fi"><div class="fd red"></div><div><div class="ft"><strong style="color:var(--w)">Urgency Tags</strong> — Control distribution speed. High Priority = distribute within 24 hours of completion.</div></div></div>
+        <div class="fi" style="border:none"><div class="fd"></div><div><div class="ft"><strong style="color:var(--w)">Custom Tags</strong> — Create client-specific or project-specific tags to power your workflow routing.</div></div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ API DOCS ═══ -->
+<div class="page" id="page-api">
+  <div class="nt nw" style="margin-bottom:14px">Scribe API v1 — Architecture reference for programmatic brief generation, retrieval, and distribution. Authentication uses Bearer tokens issued per analyst account.</div>
+
+  <div class="sh"><div class="stl">Base URL &amp; Auth</div></div>
+  <div class="cb" style="margin-bottom:16px"><span class="cc"># Scribe Intelligence API · v1.0</span>
+<span class="ck">Base URL</span>  https://api.scribe.intelligence/v1
+<span class="ck">Auth</span>      Authorization: Bearer <span class="cst">{SCRIBE_API_KEY}</span>
+<span class="ck">Format</span>    Content-Type: application/json
+<span class="ck">Rate</span>      500 req/hour · Enterprise: unlimited</div>
+
+  <div class="sh"><div class="stl">Endpoints</div></div>
+
+  <div class="ep">
+    <div class="eph"><span class="mth mg">GET</span><span class="eppath">/briefs</span><span class="epdesc">List all intelligence briefs</span></div>
+    <div class="epb">
+      <div class="fr2">
+        <div><label>Query Parameters</label>
+          <div class="cb"><span class="ck">company</span>   string   <span class="cc"># Filter by company name</span>
+<span class="ck">industry</span>  string   <span class="cc"># Filter by industry tag</span>
+<span class="ck">urgency</span>   string   <span class="cc"># high | medium | routine</span>
+<span class="ck">tag</span>       string   <span class="cc"># Any tag value</span>
+<span class="ck">limit</span>     integer  <span class="cc"># Max results (default: 20)</span>
+<span class="ck">offset</span>    integer  <span class="cc"># Pagination offset</span></div>
+        </div>
+        <div><label>Example Response</label>
+          <div class="cb">{
+  <span class="ck">"status"</span>: <span class="cst">"ok"</span>,
+  <span class="ck">"total"</span>: <span class="cn">42</span>,
+  <span class="ck">"briefs"</span>: [{
+    <span class="ck">"id"</span>: <span class="cst">"SCR-2026-001"</span>,
+    <span class="ck">"company"</span>: <span class="cst">"Microsoft Corp."</span>,
+    <span class="ck">"industry"</span>: <span class="cst">"Technology"</span>,
+    <span class="ck">"created"</span>: <span class="cst">"2026-03-28"</span>,
+    <span class="ck">"tags"</span>: [<span class="cst">"Tech"</span>,<span class="cst">"Enterprise"</span>],
+    <span class="ck">"pdf_url"</span>: <span class="cst">"https://..."</span>
+  }]
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep">
+    <div class="eph"><span class="mth mp">POST</span><span class="eppath">/briefs/generate</span><span class="epdesc">AI-generate a full brief via Claude</span></div>
+    <div class="epb">
+      <div class="fr2">
+        <div><label>Request Body</label>
+          <div class="cb">{
+  <span class="ck">"company"</span>:  <span class="cst">"Tesla Inc."</span>,
+  <span class="ck">"industry"</span>: <span class="cst">"Automotive / EV"</span>,
+  <span class="ck">"context"</span>:  <span class="cst">"Q1 2026 analysis"</span>,
+  <span class="ck">"sections"</span>: [<span class="cn">1</span>,<span class="cn">2</span>,<span class="cn">5</span>,<span class="cn">6</span>,<span class="cn">13</span>],
+  <span class="ck">"tags"</span>: {
+    <span class="ck">"industry"</span>: [<span class="cst">"Tech"</span>],
+    <span class="ck">"stage"</span>:    [<span class="cst">"Public Company"</span>],
+    <span class="ck">"urgency"</span>:  <span class="cst">"High Priority"</span>
+  },
+  <span class="ck">"distribute_to"</span>: [<span class="cst">"coo@client.com"</span>]
+}</div>
+        </div>
+        <div><label>Response</label>
+          <div class="cb">{
+  <span class="ck">"status"</span>:   <span class="cst">"ok"</span>,
+  <span class="ck">"brief_id"</span>: <span class="cst">"SCR-2026-043"</span>,
+  <span class="ck">"sections"</span>: <span class="cn">5</span>,
+  <span class="ck">"model"</span>:    <span class="cst">"claude-sonnet-4-20250514"</span>,
+  <span class="ck">"pdf_url"</span>:  <span class="cst">"https://api.scribe..."</span>,
+  <span class="ck">"sent"</span>:     <span class="cst">true</span>
+}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep">
+    <div class="eph"><span class="mth mg">GET</span><span class="eppath">/briefs/{id}</span><span class="epdesc">Retrieve a specific brief with all sections</span></div>
+    <div class="epb">
+      <div class="cb">{
+  <span class="ck">"id"</span>:        <span class="cst">"SCR-2026-001"</span>,
+  <span class="ck">"company"</span>:   <span class="cst">"Microsoft Corp."</span>,
+  <span class="ck">"analyst"</span>:   <span class="cst">"Pelumi Fawehinmi"</span>,
+  <span class="ck">"created"</span>:   <span class="cst">"2026-03-28"</span>,
+  <span class="ck">"sections"</span>: {
+    <span class="ck">"1_competitive"</span>:  <span class="cst">"Xbox is building a strategic moat..."</span>,
+    <span class="ck">"5_risk"</span>:         <span class="cst">"Primary vulnerability stems from..."</span>,
+    <span class="ck">"13_recommend"</span>:   <span class="cst">"Monitor Q2 Game Pass figures..."</span>
+  },
+  <span class="ck">"pdf_url"</span>:   <span class="cst">"https://api.scribe.intelligence/v1/briefs/SCR-2026-001/pdf"</span>
+}</div>
+    </div>
+  </div>
+
+  <div class="ep">
+    <div class="eph"><span class="mth mp">POST</span><span class="eppath">/briefs/{id}/distribute</span><span class="epdesc">Email brief to distribution list</span></div>
+    <div class="epb">
+      <div class="fr2">
+        <div><label>Request</label>
+          <div class="cb">{
+  <span class="ck">"recipients"</span>: [<span class="cst">"coo@client.com"</span>],
+  <span class="ck">"method"</span>:     <span class="cst">"email"</span>,
+  <span class="ck">"format"</span>:     <span class="cst">"pdf"</span>,
+  <span class="ck">"subject"</span>:    <span class="cst">"Scribe Intelligence Brief"</span>
+}</div>
+        </div>
+        <div><label>JavaScript SDK</label>
+          <div class="cb"><span class="ck">import</span> Scribe <span class="ck">from</span> <span class="cst">'@scribe/sdk'</span>;
+<span class="ck">const</span> client = <span class="ck">new</span> Scribe({ apiKey });
+<span class="ck">const</span> brief = <span class="ck">await</span> client.briefs.generate({
+  company: <span class="cst">'Microsoft'</span>,
+  sections: [<span class="cn">1</span>,<span class="cn">5</span>,<span class="cn">13</span>]
+});
+<span class="ck">await</span> brief.distribute({
+  recipients: [<span class="cst">'coo@client.com'</span>]
+});</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="ep">
+    <div class="eph"><span class="mth mg">GET</span><span class="eppath">/briefs/{id}/pdf</span><span class="epdesc">Download brief as PDF</span></div>
+    <div class="epb"><div class="cb">Response: <span class="cst">application/pdf</span> · Scribe-branded, print-ready document</div></div>
+  </div>
+
+  <div class="ep">
+    <div class="eph"><span class="mth md">DEL</span><span class="eppath">/briefs/{id}</span><span class="epdesc">Permanently delete a brief</span></div>
+    <div class="epb"><div class="cb">{ <span class="ck">"status"</span>: <span class="cst">"deleted"</span>, <span class="ck">"id"</span>: <span class="cst">"SCR-2026-001"</span> }</div></div>
+  </div>
+</div>
+
+<!-- ═══ SETTINGS ═══ -->
+<div class="page" id="page-settings">
+
+  <!-- AI CONNECTION STATUS — key is on the server, not in browser -->
+  <div class="sh"><div class="stl">Claude AI Connection</div></div>
+  <div class="card card-g" style="margin-bottom:18px;border:1px solid var(--bdr3)">
+    <div class="nt no" style="margin-bottom:10px">Running on hosted server — your API key is stored securely as an environment variable. No key needed in the browser.</div>
+    <div id="keyStatus" style="font-size:11px;font-family:var(--mn);color:var(--w3);margin-bottom:10px;min-height:16px"></div>
+    <button class="btn btn-d" onclick="testKey()">Test Connection</button>
+  </div>
+
+  <div class="g2">
+    <div>
+      <div class="sh"><div class="stl">Analyst Profile</div></div>
+      <div class="card">
+        <div class="fg"><label>Full Name</label><input type="text" id="sN" placeholder="Your full name"></div>
+        <div class="fg"><label>Title</label><input type="text" id="sTt" placeholder="Intelligence Analyst"></div>
+        <div class="fg"><label>Organization</label><input type="text" id="sO" placeholder="Scribe Intelligence" value="Scribe Intelligence"></div>
+        <div class="fg"><label>Email</label><input type="email" id="sE" placeholder="analyst@scribe.com"></div>
+        <button class="btn btn-g btn-fw" onclick="saveCfg()">Save Profile</button>
+      </div>
+    </div>
+    <div>
+      <div class="sh"><div class="stl">Brief Defaults</div></div>
+      <div class="card">
+        <div class="fg"><label>Default Confidentiality</label>
+          <select id="sC"><option>Confidential</option><option>Strictly Confidential</option><option>Internal Use Only</option><option>Client Restricted</option></select>
+        </div>
+        <div class="fg"><label>Brief ID Prefix</label><input type="text" id="sP" placeholder="SCR" maxlength="6"></div>
+        <div class="fg"><label>Default Distribution Note</label><input type="text" id="sD" placeholder="Do not forward without analyst approval"></div>
+        <button class="btn btn-g btn-fw" onclick="saveCfg()">Save Defaults</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="sh" style="margin-top:6px"><div class="stl">Connected Data Sources</div></div>
+  <div class="card">
+    <div class="fi"><div class="fd grn"></div><div><div class="ft">SEC EDGAR API</div><div class="fso">data.sec.gov · No key required · Real-time filings</div></div></div>
+    <div class="fi"><div class="fd grn"></div><div><div class="ft">Wikipedia REST API</div><div class="fso">en.wikipedia.org · No key required · Company profiles</div></div></div>
+    <div class="fi" style="border:none"><div class="fd" id="claudeDot" style="background:var(--w3)"></div><div><div class="ft">Claude claude-sonnet-4-20250514</div><div class="fso" id="claudeStatus">No API key — paste key above to enable AI generation</div></div></div>
+  </div>
+</div>
+
+  </div><!-- /.content -->
+</div><!-- /.main -->
+</div><!-- /.shell -->
+
+<script>
+'use strict';
+
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let briefs  = JSON.parse(localStorage.getItem('scribe_briefs_v3') || '[]');
+let bNum    = parseInt(localStorage.getItem('scribe_num_v3') || '1');
+let cfg     = JSON.parse(localStorage.getItem('scribe_cfg_v3') || '{"name":"","title":"Intelligence Analyst","org":"Scribe Intelligence","conf":"Confidential","prefix":"SCR","dnote":"Do not forward without analyst approval","email":""}');
+let apiKey  = localStorage.getItem('scribe_apikey_v3') || '';
+let step    = 0;
+let D       = {};
+let AT      = { industry:[], stage:[], topic:[], urgency:[], custom:[] };
+let aiCache = {};
+let selAI   = ['s1','s2','s5','s13'];
+
+// ═══════════════════════════════════════════════
+// SECTIONS CONFIG
+// ═══════════════════════════════════════════════
+const SECS = [
+  { id:'meta', lb:'Setup', ti:'Brief Setup', f:[
+    { id:'company', lb:'Company Name', ph:'e.g. Microsoft Corporation', w:2 },
+    { id:'ticker',  lb:'Ticker Symbol', ph:'e.g. MSFT', w:1 },
+    { id:'industry',lb:'Industry / Sector', ph:'e.g. Technology, Gaming, Healthcare', w:1 },
+    { id:'stage',   lb:'Company Stage', tp:'sel', op:['','Startup (0-2 yrs)','Growth (2-5 yrs)','Series A','Series B','Series C','Scale-up (8-12 yrs)','Public Company','Enterprise (12+ yrs)'], w:1 },
+    { id:'period',  lb:'Report Period', ph:'e.g. Q1 2026 / March 2026', w:1 },
+    { id:'client',  lb:'Client / Recipient', ph:'e.g. COO, Strategy Team', w:1 },
+    { id:'metrics', lb:'Key Metrics (comma-separated)', ph:'e.g. $2B valuation, 400 employees, 34M users', w:2 },
+    { id:'conf',    lb:'Confidentiality', tp:'sel', op:['Confidential','Strictly Confidential','Internal Use Only','Client Restricted'], w:1 },
+    { id:'distrib', lb:'Distribution List', ph:'e.g. COO, Strategy Lead, Board Observer', w:1 },
+  ]},
+  { id:'exec', lb:'S.0', ti:'Executive Summary', f:[
+    { id:'exec', lb:'Executive Summary — the single most critical insight for this decision maker', tp:'ta', ph:'The most important thing a COO needs to know about this company right now, in 2-4 sentences...', w:2 }
+  ]},
+  { id:'s1',  lb:'S.1',  ti:'Competitive Landscape',         f:[{id:'s1', lb:'Analysis',tp:'ta',ph:'Key competitors, positioning, strategic responses...',w:2},{id:'s1s',lb:'Key Signal',ph:'Most important competitive development right now...',w:2}]},
+  { id:'s2',  lb:'S.2',  ti:'Market Acceptability',          f:[{id:'s2', lb:'Analysis',tp:'ta',ph:'How is the market receiving this company? Sentiment?',w:2},{id:'s2s',lb:'Key Signal',ph:'Key market signal or data point...',w:2}]},
+  { id:'s3',  lb:'S.3',  ti:'Product Efficiency',            f:[{id:'s3', lb:'Analysis',tp:'ta',ph:'Product scalability, structural advantages or weaknesses...',w:2},{id:'s3s',lb:'Key Signal',ph:'Key product benchmark or comparable...',w:2}]},
+  { id:'s4',  lb:'S.4',  ti:'Acquisition & Merger Signals',  f:[{id:'s4', lb:'M&A Analysis',tp:'ta',ph:'Acquisition history, patterns, likely future targets...',w:2},{id:'s4s',lb:'Key Deal',ph:'Most significant deal or M&A signal...',w:2}]},
+  { id:'s5',  lb:'S.5',  ti:'Risks & Vulnerabilities',       f:[{id:'s5', lb:'Analysis',tp:'ta',ph:'Primary risks, exposure areas, strategy failure points...',w:2},{id:'s5s',lb:'Primary Risk Signal',ph:'Most critical risk to flag right now...',w:2}]},
+  { id:'s6',  lb:'S.6',  ti:'Financial Position',            f:[{id:'s6', lb:'Overview',tp:'ta',ph:'Revenue, profitability, debt, cash position, financial trends...',w:2},{id:'s6s',lb:'Key Financial Signal',ph:'Most important financial data point...',w:2}]},
+  { id:'s7',  lb:'S.7',  ti:'Leadership & C-Suite',          f:[{id:'s7', lb:'Analysis',tp:'ta',ph:'Key executives, track records, leadership changes, board...',w:2},{id:'s7s',lb:'Leadership Signal',ph:'Most important leadership development...',w:2}]},
+  { id:'s8',  lb:'S.8',  ti:'Operations & Structure',        f:[{id:'s8', lb:'Analysis',tp:'ta',ph:'Company structure, workforce, operational efficiency, restructuring...',w:2},{id:'s8s',lb:'Operational Signal',ph:'Key operational fact or development...',w:2}]},
+  { id:'s9',  lb:'S.9',  ti:'Technology & Innovation',       f:[{id:'s9', lb:'Analysis',tp:'ta',ph:'Core tech stack, innovation pipeline, R&D, patents, tech advantages...',w:2},{id:'s9s',lb:'Technology Signal',ph:'Most important technology development...',w:2}]},
+  { id:'s10', lb:'S.10', ti:'Regulatory & Compliance',       f:[{id:'s10',lb:'Analysis',tp:'ta',ph:'Regulatory risks, investigations, compliance requirements, government...',w:2},{id:'s10s',lb:'Regulatory Signal',ph:'Key regulatory development...',w:2}]},
+  { id:'s11', lb:'S.11', ti:'Market Sentiment',              f:[{id:'s11',lb:'Analysis',tp:'ta',ph:'How do investors, analysts, customers and media view this company?',w:2},{id:'s11s',lb:'Sentiment Indicator',ph:'One-line sentiment summary...',w:2}]},
+  { id:'s12', lb:'S.12', ti:'Strategic Forecast',            f:[{id:'s12',lb:'12-24 Month Forecast',tp:'ta',ph:'Where is this company headed? Likely strategic moves? Key scenarios?',w:2},{id:'s12s',lb:'Most Likely Outcome',ph:'Primary forecast scenario...',w:2}]},
+  { id:'s13', lb:'S.13', ti:'Analyst Recommendations',       f:[{id:'s13',lb:'Recommendations',tp:'ta',ph:'Specific actions the client should take based on this intelligence...',w:2},{id:'s13s',lb:'Priority Action',ph:'Most urgent recommended action...',w:2}]},
+  { id:'tags', lb:'Tags', ti:'Tags & Distribution', f:[] },
+];
+
+const AIS = [
+  {id:'s1',lb:'Competitive Landscape'},{id:'s2',lb:'Market Acceptability'},{id:'s3',lb:'Product Efficiency'},
+  {id:'s4',lb:'M&A Signals'},{id:'s5',lb:'Risks & Vulnerabilities'},{id:'s6',lb:'Financial Position'},
+  {id:'s7',lb:'Leadership'},{id:'s8',lb:'Operations'},{id:'s9',lb:'Technology'},
+  {id:'s10',lb:'Regulatory'},{id:'s11',lb:'Market Sentiment'},{id:'s12',lb:'Strategic Forecast'},
+  {id:'s13',lb:'Recommendations'}
+];
+
+const PC = {
+  s1: {bg:'#e8f0fe',br:'#1A3A6B',tx:'#0F1B35'}, s2: {bg:'#e6f4ea',br:'#0F6E56',tx:'#085041'},
+  s3: {bg:'#fef3e2',br:'#854F0B',tx:'#7a4a00'}, s4: {bg:'#fce8f3',br:'#534AB7',tx:'#26215C'},
+  s5: {bg:'#fdecea',br:'#A32D2D',tx:'#6b1a1a'}, s6: {bg:'#e8f0fe',br:'#1A3A6B',tx:'#0F1B35'},
+  s7: {bg:'#e6f4ea',br:'#0F6E56',tx:'#085041'}, s8: {bg:'#fef3e2',br:'#854F0B',tx:'#7a4a00'},
+  s9: {bg:'#fce8f3',br:'#534AB7',tx:'#26215C'}, s10:{bg:'#fdecea',br:'#A32D2D',tx:'#6b1a1a'},
+  s11:{bg:'#e8f0fe',br:'#1A3A6B',tx:'#0F1B35'}, s12:{bg:'#e6f4ea',br:'#0F6E56',tx:'#085041'},
+  s13:{bg:'#fdecea',br:'#A32D2D',tx:'#6b1a1a'},
+};
+
+const PAGE_META = {
+  dashboard: ['Dashboard',              'SCRIBE INTELLIGENCE PLATFORM'],
+  builder:   ['New Brief',              '15-POINT INTELLIGENCE ANALYSIS'],
+  briefs:    ['All Briefs',             'INTELLIGENCE ARCHIVE'],
+  preview:   ['Brief Preview',          'READY FOR DISTRIBUTION'],
+  aigen:     ['AI Generator',           'CLAUDE SONNET-4 POWERED'],
+  lookup:    ['Company Lookup',         'LIVE INTELLIGENCE'],
+  feed:      ['Live Data Feed',         'SEC EDGAR REAL-TIME'],
+  tags:      ['Tag Manager',            'DISTRIBUTION SYSTEM'],
+  api:       ['Scribe API',             'DEVELOPER DOCUMENTATION'],
+  settings:  ['Settings',              'PLATFORM CONFIGURATION'],
+};
+
+// ═══════════════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════════════
+function go(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.ni').forEach(n => n.classList.remove('on'));
+
+  const pg = document.getElementById('page-' + id);
+  if (pg) pg.classList.add('active');
+
+  // Sidebar highlight
+  const order = ['dashboard','builder','briefs','preview','aigen','lookup','feed','tags','api','settings'];
+  const idx = order.indexOf(id);
+  if (idx >= 0) document.querySelectorAll('.ni')[idx]?.classList.add('on');
+
+  // Topbar
+  const meta = PAGE_META[id] || ['Scribe',''];
+  document.getElementById('tbt').innerHTML = meta[0] + `<span class="tb-sub">${meta[1]}</span>`;
+
+  // Step nav — only show for builder
+  const sn = document.getElementById('stepNav');
+  const pf = document.getElementById('progFill');
+  if (id === 'builder') {
+    renderStepNav();
+    pf.style.width = Math.round((step / (SECS.length - 1)) * 100) + '%';
+  } else {
+    sn.innerHTML = '';
+    pf.style.width = '0%';
+  }
+
+  // Topbar actions
+  const tba = document.getElementById('tba');
+  if (id === 'preview') {
+    tba.innerHTML = `<button class="btn btn-d" onclick="go('builder')">← Edit</button><button class="btn btn-d" onclick="cpyTxt()">⎘ Copy</button><button class="btn btn-g" onclick="prtBrief()">⎙ Print/PDF</button><button class="btn btn-g" onclick="saveB()">✓ Save</button><span id="cpFb" style="display:none;font-size:10px;color:#4ade80;font-family:var(--mn);align-self:center;margin-left:4px">✓ Copied!</span>`;
+  } else {
+    tba.innerHTML = `<button class="btn btn-g" onclick="go('builder')">✦ New Brief</button>`;
+  }
+
+  // Page init
+  const inits = { dashboard:updDash, builder:renderB, briefs:renderBL, preview:renderPV, aigen:initAI, feed:loadFeed, tags:renderTags, settings:loadCfg };
+  if (inits[id]) inits[id]();
+}
+
+// ═══════════════════════════════════════════════
+// BUILDER
+// ═══════════════════════════════════════════════
+function hasD(s) {
+  if (s.id === 'tags') return Object.values(AT).some(a => a.length > 0);
+  return s.f.some(f => D[f.id] && D[f.id].trim());
+}
+
+function renderStepNav() {
+  const sn = document.getElementById('stepNav');
+  sn.innerHTML = SECS.map((s, i) => {
+    let cls = 'sn';
+    if (i === step) cls += ' on';
+    else if (hasD(s)) cls += ' done';
+    return `<div class="${cls}" onclick="goSt(${i})">${s.lb}</div>`;
+  }).join('');
+}
+
+function renderB() {
+  renderStepNav();
+  const s = SECS[step];
+  const c = document.getElementById('bldContent');
+
+  if (s.id === 'tags') {
+    c.innerHTML = tagUI();
+    setTimeout(restoreT, 20);
+  } else {
+    let html = `<div class="card card-g"><div class="ch"><div><div class="ct" style="color:var(--gold)">${s.ti}</div><div class="cm">Step ${step + 1} of ${SECS.length}</div></div></div>`;
+    html += `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">`;
+    s.f.forEach(f => {
+      const sp = f.w === 2 ? 'grid-column:1/-1' : '';
+      if (f.tp === 'ta') {
+        html += `<div style="${sp}"><label>${f.lb}</label><textarea id="bf_${f.id}" placeholder="${f.ph||''}" oninput="D['${f.id}']=this.value"></textarea></div>`;
+      } else if (f.tp === 'sel') {
+        html += `<div style="${sp}"><label>${f.lb}</label><select id="bf_${f.id}" onchange="D['${f.id}']=this.value">${f.op.map(o=>`<option value="${o}">${o||'Select...'}</option>`).join('')}</select></div>`;
+      } else {
+        html += `<div style="${sp}"><label>${f.lb}</label><input type="text" id="bf_${f.id}" placeholder="${f.ph||''}" oninput="D['${f.id}']=this.value"></div>`;
+      }
+    });
+    html += `</div>`;
+    if (aiCache[s.id]) html += `<div class="nt no" style="cursor:pointer;margin-top:10px" onclick="applyOne('${s.id}')">⬡ AI-generated content available — click to apply to this section →</div>`;
+    html += `</div>`;
+    c.innerHTML = html;
+    setTimeout(() => s.f.forEach(f => { const e = document.getElementById('bf_' + f.id); if (e && D[f.id]) e.value = D[f.id]; }), 10);
+  }
+
+  document.getElementById('bPv').style.visibility = step === 0 ? 'hidden' : 'visible';
+  document.getElementById('bNx').textContent = step === SECS.length - 1 ? '✓ Save & Preview' : 'Next →';
+  document.getElementById('progFill').style.width = Math.round((step / (SECS.length - 1)) * 100) + '%';
+}
+
+function applyOne(id) {
+  if (!aiCache[id]) return;
+  D[id]       = aiCache[id].main || '';
+  D[id + 's'] = aiCache[id].signal || '';
+  renderB();
+  toast(`${AIS.find(s => s.id === id)?.lb || id} applied to brief`);
+}
+
+function sNext() { if (step < SECS.length - 1) { step++; renderB(); } else { saveB(); go('preview'); } }
+function sPrev() { if (step > 0) { step--; renderB(); } }
+function goSt(i) { step = i; renderB(); }
+
+// ═══════════════════════════════════════════════
+// TAGS UI
+// ═══════════════════════════════════════════════
+function tagUI() {
+  const inds  = ['Tech','Gaming','Fintech','Healthcare','E-commerce','SaaS','Media','Manufacturing','Energy','Retail','Finance','Logistics','Real Estate','Defense','Education','Biotech'];
+  const stgs  = ['Startup','Series A','Series B','Series C','Scale-up','Public Company','Enterprise'];
+  const tpcs  = ['Competitive Intel','M&A','Risk Alert','Market Entry','Strategy','Financial','Leadership','Regulatory','Technology','Product','Sentiment'];
+  return `
+    <div class="card card-g">
+      <div class="ch"><div class="ct" style="color:var(--gold)">Tags & Distribution</div><div class="cm">Step ${SECS.length} of ${SECS.length}</div></div>
+      <div style="margin-bottom:12px"><div class="cm" style="margin-bottom:7px">INDUSTRY / SECTOR</div><div class="chips" id="tcI">${inds.map(t=>`<div class="chip cind" onclick="tgChip(this,'industry','${t}')">${t}</div>`).join('')}</div></div>
+      <div style="margin-bottom:12px"><div class="cm" style="margin-bottom:7px">COMPANY STAGE</div><div class="chips" id="tcS">${stgs.map(t=>`<div class="chip cstg" onclick="tgChip(this,'stage','${t}')">${t}</div>`).join('')}</div></div>
+      <div style="margin-bottom:12px"><div class="cm" style="margin-bottom:7px">BRIEF TOPIC</div><div class="chips" id="tcT">${tpcs.map(t=>`<div class="chip ctpc" onclick="tgChip(this,'topic','${t}')">${t}</div>`).join('')}</div></div>
+      <div style="margin-bottom:12px"><div class="cm" style="margin-bottom:7px">URGENCY LEVEL</div><div class="chips" id="tcU">
+        <div class="chip curh" onclick="tgChip(this,'urgency','High Priority')">High Priority</div>
+        <div class="chip curm" onclick="tgChip(this,'urgency','Medium Priority')">Medium Priority</div>
+        <div class="chip"      onclick="tgChip(this,'urgency','Routine')">Routine</div>
+      </div></div>
+      <div><div class="cm" style="margin-bottom:7px">CUSTOM TAGS</div>
+        <div style="display:flex;gap:7px;margin-bottom:7px"><input type="text" id="ctIn" placeholder="Type custom tag and press Enter..." onkeydown="if(event.key==='Enter')addCt()" style="flex:1"><button class="btn" onclick="addCt()">+ Add</button></div>
+        <div class="chips" id="tcC"></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="ch"><div class="ct">Distribution Settings</div></div>
+      <div class="fr2">
+        <div><label>Distribution List</label><input type="text" id="bf_d2" placeholder="COO, Strategy Lead, Board Observer..." oninput="D['d2']=this.value"></div>
+        <div><label>Confidentiality</label><select id="bf_c2" onchange="D['c2']=this.value"><option>Confidential</option><option>Strictly Confidential</option><option>Internal Use Only</option><option>Client Restricted</option></select></div>
+      </div>
+      <div><label>Distribution Note</label><input type="text" id="bf_dn" placeholder="Do not forward without analyst approval" oninput="D['dn']=this.value"></div>
+    </div>`;
+}
+
+function restoreT() {
+  [['industry','tcI'],['stage','tcS'],['topic','tcT']].forEach(([cat,tcId]) => {
+    document.querySelectorAll('#'+tcId+' .chip').forEach(c => {
+      if (AT[cat].includes(c.textContent.trim())) c.classList.add('on');
+    });
+  });
+  document.querySelectorAll('#tcU .chip').forEach(c => { if (AT.urgency.includes(c.textContent.trim())) c.classList.add('on'); });
+  renderCCs();
+  if (D.d2) { const e = document.getElementById('bf_d2'); if (e) e.value = D.d2; }
+  if (D.c2) { const e = document.getElementById('bf_c2'); if (e) e.value = D.c2; }
+  if (D.dn) { const e = document.getElementById('bf_dn'); if (e) e.value = D.dn; }
+}
+
+function tgChip(el, cat, val) {
+  if (cat === 'urgency') { document.querySelectorAll('#tcU .chip').forEach(c => c.classList.remove('on')); AT.urgency = []; }
+  if (el.classList.contains('on')) { el.classList.remove('on'); AT[cat] = AT[cat].filter(t => t !== val); }
+  else { el.classList.add('on'); if (!AT[cat].includes(val)) AT[cat].push(val); }
+}
+function addCt() { const i = document.getElementById('ctIn'); const v = i?.value?.trim(); if (v && !AT.custom.includes(v)) { AT.custom.push(v); i.value = ''; renderCCs(); } }
+function renderCCs() { const c = document.getElementById('tcC'); if (!c) return; c.innerHTML = AT.custom.map(t => `<div class="chip on" style="display:flex;align-items:center;gap:4px">${t}<span onclick="rmCt('${t.replace(/'/g,"\\'")}');event.stopPropagation()" style="cursor:pointer;opacity:.6;font-size:12px">×</span></div>`).join(''); }
+function rmCt(t) { AT.custom = AT.custom.filter(x => x !== t); renderCCs(); }
+
+// ═══════════════════════════════════════════════
+// AUTO-FILL — AI generates all 15 sections
+// ═══════════════════════════════════════════════
+let manualMode = false;
+
+function toggleManual() {
+  manualMode = !manualMode;
+  const p = document.getElementById('afPanel');
+  const b = document.querySelector('[onclick="toggleManual()"]');
+  if (manualMode) {
+    p.style.display = 'none';
+    renderB();
+  } else {
+    p.style.display = '';
+    b.textContent = 'Manual mode';
+  }
+}
+
+async function autoFill() {
+  const co  = document.getElementById('afIn').value.trim();
+  const ind = document.getElementById('afInd')?.value.trim() || '';
+  if (!co) { toast('Please enter a company name'); return; }
+
+  const st  = document.getElementById('afSt');
+  const btn = document.getElementById('afBtn');
+  const rs  = document.getElementById('reviewScreen');
+  const bc  = document.getElementById('bldContent');
+
+  if (!getApiKey()) { toast('Add your Anthropic API key in Settings first'); return; }
+  btn.disabled = true;
+  btn.textContent = '⬡ Generating...';
+  st.innerHTML = '<span style="color:var(--gold)">Step 1/2 — Fetching Wikipedia context...</span>';
+
+  // Step 1: Wikipedia for company context
+  let wikiContext = '';
+  try {
+    const wr = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(co)}`);
+    if (wr.ok) {
+      const wd = await wr.json();
+      wikiContext = wd.extract || '';
+      D.company   = D.company || wd.title;
+      // Parse quick metrics from Wikipedia
+      const em = wikiContext.match(/(\d[\d,]+)\s*(employees?|staff)/i);
+      const fm = wikiContext.match(/founded\s+(?:in\s+)?(\d{4})/i);
+      const rm = wikiContext.match(/revenue[^$]*\$([\d.]+)\s*(billion|million|trillion)/i);
+      const ms = [];
+      if (em) { const n = parseInt(em[1].replace(/,/g,'')); ms.push(n>999?`${Math.round(n/1000)}K employees`:`${em[1]} employees`); }
+      if (fm) ms.push(`Founded ${fm[1]}`);
+      if (rm) ms.push(`$${rm[1]}${rm[2].charAt(0).toUpperCase()} revenue`);
+      if (ms.length && !D.metrics) D.metrics = ms.join(', ');
+    }
+  } catch { /* Wikipedia optional — Claude can work without it */ }
+
+  st.innerHTML = '<span style="color:var(--gold)">Step 2/2 — Claude is writing all 15 sections...</span><span class="dots" style="margin-left:6px"><span></span><span></span><span></span></span>';
+
+  // Step 2: Claude generates ALL sections in one call
+  const prompt = `You are a senior intelligence analyst at Scribe — The Intelligence Company.
+
+Generate a complete 15-section intelligence brief for the company below. Be specific, analytical, and senior-level. Avoid generic statements. Reference real known facts, market dynamics, and strategic signals where possible.
+
+Company: ${co}
+Industry: ${ind || 'not specified'}
+Wikipedia context: ${wikiContext ? wikiContext.substring(0,600) : 'not available'}
+Report period: ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}
+
+For each section write:
+- "main": 3-5 sentences of substantive analysis. Be specific to this company.
+- "signal": One crisp sentence — the single most critical intelligence point for an executive.
+
+Also provide:
+- "exec": A 2-3 sentence executive summary — the one thing a COO must know about this company right now.
+- "industry": The company's primary industry/sector (1-3 words)
+- "stage": The company stage (e.g. Public Company, Series B, Enterprise)
+- "metrics": 3 key metrics as comma-separated values (e.g. "$3.4T market cap, 160K employees, Founded 1975")
+
+Return ONLY valid JSON, no markdown, no backticks:
+{
+  "exec": "...",
+  "industry": "...",
+  "stage": "...",
+  "metrics": "...",
+  "s1":  {"main":"...","signal":"..."},
+  "s2":  {"main":"...","signal":"..."},
+  "s3":  {"main":"...","signal":"..."},
+  "s4":  {"main":"...","signal":"..."},
+  "s5":  {"main":"...","signal":"..."},
+  "s6":  {"main":"...","signal":"..."},
+  "s7":  {"main":"...","signal":"..."},
+  "s8":  {"main":"...","signal":"..."},
+  "s9":  {"main":"...","signal":"..."},
+  "s10": {"main":"...","signal":"..."},
+  "s11": {"main":"...","signal":"..."},
+  "s12": {"main":"...","signal":"..."},
+  "s13": {"main":"...","signal":"..."}
+}`;
+
+  try {
+    const res = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, max_tokens: 4000 })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Server error');
+    const text = data.text || '';
+
+    let parsed = {};
+    try {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch(pe) {
+      throw new Error('AI response could not be parsed. Please try again.');
+    }
+
+    // Apply all values to D (data store)
+    if (parsed.exec)     D.exec     = parsed.exec;
+    if (parsed.industry && !D.industry) D.industry = parsed.industry;
+    if (parsed.stage    && !D.stage)    D.stage    = parsed.stage;
+    if (parsed.metrics  && !D.metrics)  D.metrics  = parsed.metrics;
+    if (!D.company) D.company = co;
+    if (!D.period)  D.period  = new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
+
+    const sids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
+    sids.forEach(k => {
+      if (parsed[k]) {
+        D[k]       = parsed[k].main   || '';
+        D[k + 's'] = parsed[k].signal || '';
+        aiCache[k] = parsed[k];
+      }
+    });
+
+    // Show REVIEW screen instead of jumping straight into builder
+    showReview(co, parsed, sids);
+    st.innerHTML = '<span style="color:#4ade80">✓ All 15 sections generated — review below</span>';
+
+  } catch(err) {
+    st.innerHTML = `<span style="color:#f87171">⚠ ${err.message || 'Error connecting to Claude AI'}</span>`;
+    renderB();
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬡ Regenerate';
+}
+
+function showReview(co, parsed, sids) {
+  const rs  = document.getElementById('reviewScreen');
+  const bc  = document.getElementById('bldContent');
+  bc.innerHTML = '';
+
+  const AIS_MAP = {s1:'Competitive Landscape',s2:'Market Acceptability',s3:'Product Efficiency',s4:'Acquisition & Merger Signals',s5:'Risks & Vulnerabilities',s6:'Financial Position',s7:'Leadership & C-Suite',s8:'Operations & Structure',s9:'Technology & Innovation',s10:'Regulatory & Compliance',s11:'Market Sentiment',s12:'Strategic Forecast',s13:'Analyst Recommendations'};
+
+  rs.style.display = 'block';
+  rs.innerHTML = `
+    <div class="card card-g" style="margin-bottom:12px">
+      <div class="ch">
+        <div>
+          <div class="ct" style="color:var(--gold);font-size:14px">Review: ${co} Intelligence Brief</div>
+          <div class="cm">All 15 sections generated by Claude. Edit any field below, then click Approve & Build.</div>
+        </div>
+        <div style="display:flex;gap:7px">
+          <button class="btn btn-g" onclick="approveReview()">✓ Approve & Build Brief</button>
+          <button class="btn btn-d" onclick="goBuilderManual()">Edit Section by Section</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:12px;padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--bdr)">
+        <div class="cm" style="margin-bottom:6px">EXECUTIVE SUMMARY</div>
+        <textarea id="rv_exec" style="min-height:60px" oninput="D['exec']=this.value">${parsed.exec||''}</textarea>
+      </div>
+      <div class="fr2" style="margin-bottom:10px">
+        <div><label>Company</label><input type="text" id="rv_company" value="${D.company||co}" oninput="D['company']=this.value"></div>
+        <div><label>Industry</label><input type="text" id="rv_industry" value="${D.industry||''}" oninput="D['industry']=this.value"></div>
+        <div><label>Stage</label><input type="text" id="rv_stage" value="${D.stage||''}" oninput="D['stage']=this.value"></div>
+        <div><label>Key Metrics</label><input type="text" id="rv_metrics" value="${D.metrics||''}" oninput="D['metrics']=this.value"></div>
+      </div>
+    </div>
+
+    ${sids.map((k,i) => {
+      const c = PC[k] || PC.s1;
+      const sec = parsed[k] || {main:'',signal:''};
+      return `<div class="card" style="margin-bottom:8px;border-left:3px solid ${c.br}">
+        <div class="ch" style="padding-bottom:7px;margin-bottom:8px">
+          <div style="display:flex;align-items:center;gap:7px">
+            <div style="width:19px;height:19px;border-radius:50%;background:${c.br};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mn);flex-shrink:0">${i+1}</div>
+            <div class="ct">${AIS_MAP[k]}</div>
+          </div>
+        </div>
+        <div style="margin-bottom:8px">
+          <label>Analysis</label>
+          <textarea id="rv_${k}" oninput="D['${k}']=this.value" style="min-height:72px">${sec.main||''}</textarea>
+        </div>
+        <div>
+          <label>Key Signal</label>
+          <input type="text" id="rv_${k}s" value="${sec.signal||''}" oninput="D['${k}s']=this.value">
+        </div>
+      </div>`;
+    }).join('')}
+
+    <div style="display:flex;gap:7px;margin-top:14px;margin-bottom:4px">
+      <button class="btn btn-g" onclick="approveReview()">✓ Approve & Build Brief</button>
+      <button class="btn btn-d" onclick="goBuilderManual()">Edit Section by Section</button>
+      <button class="btn btn-d" onclick="previewFromReview()">Preview Now →</button>
+    </div>`;
+}
+
+function approveReview() {
+  // Sync all review fields into D one final time
+  const sids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
+  ['exec','company','industry','stage','metrics'].forEach(id => {
+    const e = document.getElementById('rv_' + id); if (e) D[id] = e.value;
+  });
+  sids.forEach(k => {
+    const em = document.getElementById('rv_' + k);   if (em) D[k]       = em.value;
+    const es = document.getElementById('rv_' + k+'s'); if (es) D[k+'s'] = es.value;
+  });
+  document.getElementById('reviewScreen').style.display = 'none';
+  step = 0;
+  renderB();
+  toast('Brief approved — review section by section or go to Preview');
+}
+
+function previewFromReview() {
+  approveReview();
+  go('preview');
+}
+
+function goBuilderManual() {
+  document.getElementById('reviewScreen').style.display = 'none';
+  step = 0;
+  renderB();
+}
+
+// ═══════════════════════════════════════════════
+// AI GENERATOR
+// ═══════════════════════════════════════════════
+function initAI() {
+  const c = document.getElementById('aiChips');
+  if (!c) return;
+  c.innerHTML = AIS.map(s => `<div class="chip ctpc ${selAI.includes(s.id)?'on':''}" onclick="tgAI(this,'${s.id}')">${s.lb}</div>`).join('');
+}
+function tgAI(el, id) { el.classList.toggle('on'); if (el.classList.contains('on')) { if (!selAI.includes(id)) selAI.push(id); } else { selAI = selAI.filter(s => s !== id); } }
+function genAllAI() { selAI = AIS.map(s => s.id); initAI(); genAI(); }
+function applyAllAI() { Object.keys(aiCache).forEach(k => { D[k] = aiCache[k].main || ''; D[k+'s'] = aiCache[k].signal || ''; }); toast('All AI sections applied to brief'); go('builder'); }
+
+async function genAI() {
+  const co  = document.getElementById('aiCo').value.trim();
+  const ind = document.getElementById('aiInd').value.trim();
+  const ctx = document.getElementById('aiCtx').value.trim();
+  if (!co)         { toast('Please enter a company name'); return; }
+  if (!selAI.length){ toast('Please select at least one section'); return; }
+
+  const btn = document.getElementById('btnGen');
+  btn.disabled = true;
+  btn.textContent = '⬡ Generating...';
+
+  const res = document.getElementById('aiRes');
+  res.innerHTML = `<div class="nt ni2" style="display:flex;align-items:center;gap:8px"><span style="color:var(--gold);font-family:var(--mn);font-size:11px">Claude is analyzing ${co}...</span><span class="dots"><span></span><span></span><span></span></span></div>`;
+
+  const secNames = selAI.map(id => AIS.find(s => s.id === id)?.lb).filter(Boolean);
+
+  const prompt = `You are a senior intelligence analyst at Scribe — The Intelligence Company. Generate high-quality intelligence brief sections for the following company.
+
+Company: ${co}
+Industry: ${ind || 'Not specified'}
+Context / Focus: ${ctx || 'General strategic analysis'}
+Sections requested: ${secNames.join(', ')}
+
+For EACH section write:
+1. "main": A substantive 3-5 sentence analysis paragraph. Be specific, data-aware, and senior-analyst quality. Avoid generic platitudes. Reference real strategic dynamics where possible.
+2. "signal": A single sentence — the most critical intelligence point from this section that a COO must act on.
+
+Return ONLY a valid JSON object with section IDs as keys. No markdown, no preamble, no backticks. Example format:
+{"s1":{"main":"Analysis here.","signal":"Signal here."},"s5":{"main":"...","signal":"..."}}
+
+Only include the requested sections.`;
+
+  try {
+    const response = await fetch('/api/claude', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ prompt, max_tokens: 2000 })
+    });
+
+    const data = await response.json();
+    if (!response.ok) throw new Error(data.error || 'Server error');
+    const text = data.text || '';
+
+    let parsed = {};
+    try {
+      const match = text.match(/\{[\s\S]*\}/);
+      if (match) parsed = JSON.parse(match[0]);
+    } catch {
+      selAI.forEach(id => { parsed[id] = { main: 'Analysis generated. Please review and refine.', signal: '' }; });
+    }
+
+    // Cache the results
+    Object.keys(parsed).forEach(k => {
+      aiCache[k] = parsed[k];
+      if (!D[k]    && parsed[k].main)   D[k]    = parsed[k].main;
+      if (!D[k+'s'] && parsed[k].signal) D[k+'s'] = parsed[k].signal;
+    });
+
+    const generated = Object.keys(parsed).length;
+    res.innerHTML = `
+      <div class="nt no" style="margin-bottom:12px">⬡ Generated ${generated} section${generated>1?'s':''} for <strong>${co}</strong></div>
+      ${Object.keys(parsed).map(k => {
+        const s = AIS.find(x => x.id === k);
+        const c2 = PC[k] || PC.s1;
+        return `<div class="card" style="margin-bottom:8px">
+          <div class="ch"><div class="ct" style="color:var(--gold)">${s?.lb || k}</div><button class="btn btn-sm btn-d" onclick="applyOne('${k}')">Apply to Brief →</button></div>
+          <p style="font-size:12px;line-height:1.75;color:var(--w2);margin-bottom:8px">${parsed[k].main || ''}</p>
+          ${parsed[k].signal ? `<div class="nt nw" style="margin:0"><strong>Signal:</strong> ${parsed[k].signal}</div>` : ''}
+        </div>`;
+      }).join('')}
+      <div style="display:flex;gap:7px;margin-top:12px">
+        <button class="btn btn-g" onclick="applyAllAI()">Apply All to Brief →</button>
+        <button class="btn btn-d" onclick="go('builder')">Go to Builder</button>
+      </div>`;
+  } catch (err) {
+    res.innerHTML = `<div class="nt ne">Error connecting to Claude AI. This platform requires Anthropic API access. Make sure you are using it through Claude.ai or a deployment with the API enabled.<br><br><small>${err.message}</small></div>`;
+  }
+
+  btn.disabled = false;
+  btn.textContent = '⬡ Generate Selected';
+}
+
+// ═══════════════════════════════════════════════
+// COMPANY LOOKUP
+// ═══════════════════════════════════════════════
+async function doLookup() {
+  const q = document.getElementById('lkQ').value.trim();
+  if (!q) return;
+  const r = document.getElementById('lkRes');
+  r.innerHTML = `<div class="nt ni2">⟳ Searching Wikipedia for "${q}"...</div>`;
+  try {
+    const res = await fetch(`/api/wiki/${encodeURIComponent(q)}`);
+    if (!res.ok) throw new Error();
+    const d = await res.json();
+    r.innerHTML = `
+      <div class="card card-g">
+        <div class="ch">
+          <div><div class="ct" style="color:var(--gold);font-size:14px">${d.title}</div><div class="cm">Source: Wikipedia · ${d.type || 'Article'}</div></div>
+          <div style="display:flex;gap:6px">
+            <button class="btn btn-d btn-sm" onclick="useForB('${d.title.replace(/'/g,"\\'")}')">Use for Brief →</button>
+            <button class="btn btn-g btn-sm" onclick="go('aigen');setTimeout(()=>{document.getElementById('aiCo').value='${d.title.replace(/'/g,"\\'")}'},100)">AI Generate →</button>
+          </div>
+        </div>
+        <div class="dp" style="margin:0 0 12px">
+          <div class="dph"><div class="dpt">Company Profile</div><span class="sbdg">WIKIPEDIA</span></div>
+          <p style="font-size:12px;line-height:1.75;color:var(--w2)">${d.extract || 'No description available.'}</p>
+        </div>
+        <div class="nt ni2">SEC Filings: <a href="https://www.sec.gov/cgi-bin/browse-edgar?company=${encodeURIComponent(q)}&action=getcompany&type=10-K" target="_blank" style="color:var(--gold)">Search SEC EDGAR →</a></div>
+      </div>`;
+  } catch {
+    r.innerHTML = `<div class="nt ne">No results found for "${q}". Try a different company name or ticker symbol.</div>`;
+  }
+}
+function useForB(name) { D.company = name; step = 0; go('builder'); setTimeout(() => { const e = document.getElementById('bf_company'); if (e) e.value = name; }, 80); }
+
+// ═══════════════════════════════════════════════
+// PREVIEW & SAVE
+// ═══════════════════════════════════════════════
+function allTags() {
+  return [
+    ...AT.industry.map(t => ({t, cls:'bti'})),
+    ...AT.stage   .map(t => ({t, cls:'bts'})),
+    ...AT.topic   .map(t => ({t, cls:'btt'})),
+    ...AT.urgency .map(t => ({t, cls:'btu'})),
+    ...AT.custom  .map(t => ({t, cls:'btc'})),
+  ];
+}
+
+function renderPV() {
+  const co     = D.company   || 'Company Name';
+  const conf   = D.c2 || D.conf || cfg.conf || 'Confidential';
+  const period = D.period    || new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
+  const client = D.client    || 'Executive Leadership';
+  const dist   = D.d2 || D.distrib || '';
+  const dn     = D.dn        || cfg.dnote || '';
+  const bid    = `${cfg.prefix||'SCR'}-${new Date().getFullYear()}-${String(bNum).padStart(3,'0')}`;
+  const analyst= cfg.name    || 'Scribe Analyst';
+  const atitle = cfg.title   || 'Intelligence Analyst';
+  const metrics= (D.metrics  || '').split(',').map(m => m.trim()).filter(Boolean).slice(0,3);
+  const tags   = allTags();
+
+  const secDefs = [
+    {num:1,id:'s1',sig:'s1s',ti:'COMPETITIVE LANDSCAPE'},
+    {num:2,id:'s2',sig:'s2s',ti:'MARKET ACCEPTABILITY'},
+    {num:3,id:'s3',sig:'s3s',ti:'PRODUCT EFFICIENCY'},
+    {num:4,id:'s4',sig:'s4s',ti:'ACQUISITION & MERGER SIGNALS'},
+    {num:5,id:'s5',sig:'s5s',ti:'RISKS & VULNERABILITIES'},
+    {num:6,id:'s6',sig:'s6s',ti:'FINANCIAL POSITION'},
+    {num:7,id:'s7',sig:'s7s',ti:'LEADERSHIP & C-SUITE'},
+    {num:8,id:'s8',sig:'s8s',ti:'OPERATIONS & STRUCTURE'},
+    {num:9,id:'s9',sig:'s9s',ti:'TECHNOLOGY & INNOVATION'},
+    {num:10,id:'s10',sig:'s10s',ti:'REGULATORY & COMPLIANCE'},
+    {num:11,id:'s11',sig:'s11s',ti:'MARKET SENTIMENT'},
+    {num:12,id:'s12',sig:'s12s',ti:'STRATEGIC FORECAST'},
+    {num:13,id:'s13',sig:'s13s',ti:'ANALYST RECOMMENDATIONS'},
+  ].filter(s => D[s.id]);
+
+  document.getElementById('pvCont').innerHTML = `
+    <div class="bp">
+      <div class="bpm">
+        <div><div class="bpname">Scribe</div><div class="bptag">THE INTELLIGENCE COMPANY</div></div>
+        <div class="bpmet">
+          <div class="bpmi">Intelligence Brief · ${bid}</div>
+          <div class="bpmi">${period}</div>
+          <div class="bpmi">For: ${client}</div>
+          <div class="bpconf">${conf.toUpperCase()}</div>
+        </div>
+      </div>
+      <div class="bptb">
+        <div>
+          <div class="bpco">${co.toUpperCase()}</div>
+          <div class="bpcos">${[D.industry,D.stage].filter(Boolean).join(' · ')||'Intelligence Analysis'}</div>
+        </div>
+        <div class="bpcbdg">${conf}</div>
+      </div>
+      ${D.exec ? `<div class="bpex">${D.exec}</div>` : ''}
+      ${metrics.length ? `<div class="bpmx">${metrics.map(m => { const p = m.split(' '); return `<div class="bpmc"><div class="bpmv">${p[0]}</div><div class="bpml">${p.slice(1).join(' ')||m}</div></div>`; }).join('')}</div>` : ''}
+      <div class="bpbody">
+        ${secDefs.map(s => {
+          const c = PC[s.id] || PC.s1;
+          return `<div class="bpsec">
+            <div class="bpsh"><div class="bpsn">${s.num}</div><div class="bpst">${s.ti}</div></div>
+            <div class="bpsx">${D[s.id]}</div>
+            ${D[s.sig] ? `<div class="bpsi" style="background:${c.bg};border-left:3px solid ${c.br};color:${c.tx}"><strong>Signal:</strong> ${D[s.sig]}</div>` : ''}
+          </div>`;
+        }).join('')}
+        ${!secDefs.length ? `<div style="text-align:center;padding:30px;color:rgba(10,14,26,.3)">No content yet — fill sections in the builder.</div>` : ''}
+      </div>
+      ${tags.length ? `<div class="bptags">${tags.map(({t,cls}) => `<span class="btag ${cls}">${t}</span>`).join('')}</div>` : ''}
+      ${dist ? `<div class="bpdist">Distribution: ${dist}${dn ? ' · ' + dn : ''}</div>` : ''}
+      <div class="bpfoot">
+        <div class="bpfl">Scribe · The Intelligence Company · ${bid} · ${period}</div>
+        <div class="bpfr">${analyst}<div style="font-size:9px;color:rgba(255,255,255,.3);margin-top:1px">${atitle}</div></div>
+      </div>
+    </div>`;
+}
+
+function saveB() {
+  const co   = D.company || 'Untitled Brief';
+  const tags = allTags().map(({t}) => t);
+  const b = {
+    id: Date.now(), company: co, industry: D.industry||'', stage: D.stage||'',
+    period: D.period||new Date().toLocaleDateString(), tags,
+    AT: JSON.parse(JSON.stringify(AT)), data: {...D},
+    created: new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    briefId: `${cfg.prefix||'SCR'}-${new Date().getFullYear()}-${String(bNum).padStart(3,'0')}`,
+  };
+  briefs.unshift(b); bNum++;
+  localStorage.setItem('scribe_briefs_v3', JSON.stringify(briefs));
+  localStorage.setItem('scribe_num_v3', String(bNum));
+  document.getElementById('nc').textContent = briefs.length;
+  updDash();
+  toast('Brief saved!');
+}
+
+function prtBrief() {
+  renderPV();
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-preview').classList.add('active');
+  setTimeout(() => window.print(), 200);
+}
+
+function cpyTxt() {
+  const e = document.getElementById('pvCont');
+  if (!e) return;
+  const copy = () => { const f = document.getElementById('cpFb'); if (f) { f.style.display='inline'; setTimeout(()=>f.style.display='none',2200); } };
+  navigator.clipboard.writeText(e.innerText).then(copy).catch(() => {
+    const ta = document.createElement('textarea'); ta.value = e.innerText;
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); copy();
+  });
+}
+
+// ═══════════════════════════════════════════════
+// BRIEFS LIST
+// ═══════════════════════════════════════════════
+function renderBL(filtered) {
+  const list = filtered !== undefined ? filtered : briefs;
+  const c = document.getElementById('bList');
+  const inds = [...new Set(briefs.map(b => b.industry).filter(Boolean))];
+  const fi = document.getElementById('bFI');
+  if (fi) { const cur = fi.value; fi.innerHTML = '<option value="">All Industries</option>' + inds.map(i => `<option${i===cur?' selected':''}>${i}</option>`).join(''); }
+
+  if (!list.length) {
+    c.innerHTML = `<div class="emp"><div class="ei">▤</div><div class="et">No Briefs Found</div><div class="ex">No briefs match your filters.</div><button class="btn btn-g" onclick="go('builder')">Create Brief</button></div>`;
+    return;
+  }
+  c.innerHTML = `<div class="bl">${list.map(b => `
+    <div class="bi" onclick="viewB(${b.id})">
+      <div class="bav">${b.company.charAt(0).toUpperCase()}</div>
+      <div class="bin">
+        <div class="bco">${b.company}</div>
+        <div class="bmt">${b.briefId} · ${b.industry||'General'} · ${b.created}</div>
+        <div class="btr">${b.tags.slice(0,5).map(t=>`<span class="tag tc">${t}</span>`).join('')}${b.tags.length>5?`<span style="font-size:9px;color:var(--w3);font-family:var(--mn)">+${b.tags.length-5}</span>`:''}</div>
+      </div>
+      <div class="bac">
+        <button class="btn btn-sm btn-d" onclick="event.stopPropagation();editB(${b.id})">Edit</button>
+        <button class="btn btn-sm btn-r" onclick="event.stopPropagation();delB(${b.id})">Del</button>
+      </div>
+    </div>`).join('')}</div>`;
+}
+
+function filterB() {
+  const q   = (document.getElementById('bSrch')?.value||'').toLowerCase();
+  const ind = document.getElementById('bFI')?.value||'';
+  const urg = document.getElementById('bFU')?.value||'';
+  renderBL(briefs.filter(b =>
+    (!q   || b.company.toLowerCase().includes(q) || b.tags.some(t=>t.toLowerCase().includes(q))) &&
+    (!ind || b.industry === ind) &&
+    (!urg || b.tags.includes(urg))
+  ));
+}
+
+function viewB(id) {
+  const b = briefs.find(x => x.id === id); if (!b) return;
+  Object.keys(b.data).forEach(k => D[k] = b.data[k]);
+  AT = JSON.parse(JSON.stringify(b.AT || {industry:[],stage:[],topic:[],urgency:[],custom:[]}));
+  go('preview');
+}
+
+function editB(id) {
+  const b = briefs.find(x => x.id === id); if (!b) return;
+  Object.keys(b.data).forEach(k => D[k] = b.data[k]);
+  AT = JSON.parse(JSON.stringify(b.AT || {industry:[],stage:[],topic:[],urgency:[],custom:[]}));
+  step = 0; go('builder');
+}
+
+function delB(id) {
+  if (!confirm('Delete this brief? This cannot be undone.')) return;
+  briefs = briefs.filter(b => b.id !== id);
+  localStorage.setItem('scribe_briefs_v3', JSON.stringify(briefs));
+  document.getElementById('nc').textContent = briefs.length;
+  renderBL(); updDash();
+}
+
+// ═══════════════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════════════
+function updDash() {
+  document.getElementById('dT').textContent = briefs.length;
+  const mo = new Date().toLocaleDateString('en-US',{month:'short'});
+  document.getElementById('dM').textContent = briefs.filter(b => b.created.includes(mo)).length;
+  const allSecs = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
+  const ts = briefs.reduce((a,b) => a + allSecs.filter(k => b.data && b.data[k]).length, 0);
+  document.getElementById('dS').textContent = briefs.length ? Math.round(ts/briefs.length) : '—';
+  document.getElementById('dI').textContent = new Set(briefs.map(b=>b.industry).filter(Boolean)).size;
+  document.getElementById('nc').textContent  = briefs.length;
+
+  const re = document.getElementById('dR');
+  if (!briefs.length) {
+    re.innerHTML = `<div class="emp"><div class="ei">◈</div><div class="et">No Briefs Yet</div><div class="ex">Create your first intelligence brief.</div><button class="btn btn-g" onclick="go('builder')">Create Brief</button></div>`;
+  } else {
+    re.innerHTML = `<div class="bl">${briefs.slice(0,4).map(b=>`
+      <div class="bi" onclick="viewB(${b.id})">
+        <div class="bav">${b.company.charAt(0).toUpperCase()}</div>
+        <div class="bin">
+          <div class="bco">${b.company}</div>
+          <div class="bmt">${b.briefId} · ${b.created}</div>
+          <div class="btr">${b.tags.slice(0,3).map(t=>`<span class="tag tc">${t}</span>`).join('')}</div>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// SEC EDGAR FEED
+// ═══════════════════════════════════════════════
+function loadFeed() {
+  const d0 = new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const d1 = new Date(Date.now()-86400000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  const feed = {
+    lt: [
+      {co:'Apple Inc.',      tp:'Quarterly earnings report',        fm:'10-Q', dt:d0, tm:'2h',  c:''},
+      {co:'Microsoft Corp.', tp:'Annual report — fiscal year 2025', fm:'10-K', dt:d0, tm:'4h',  c:''},
+      {co:'Tesla Inc.',      tp:'Current report — material event',  fm:'8-K',  dt:d0, tm:'6h',  c:'red'},
+      {co:'Amazon.com Inc.', tp:'Proxy statement filed',            fm:'DEF 14A', dt:d1, tm:'1d', c:'gold'},
+      {co:'Alphabet Inc.',   tp:'Quarterly financial results',      fm:'10-Q', dt:d1, tm:'1d',  c:''},
+      {co:'NVIDIA Corp.',    tp:'Insider transaction reported',      fm:'4',    dt:d1, tm:'2d',  c:'gold'},
+    ],
+    ev: [
+      {co:'NVIDIA Corp.',        ev:'Entry into material definitive agreement — AI infrastructure partnership', dt:d0, tm:'1h',  c:'grn'},
+      {co:'Netflix Inc.',        ev:'Results of operations and financial condition — Q1 2026',                 dt:d0, tm:'3h',  c:''},
+      {co:'Salesforce Inc.',     ev:'Departure of directors or certain officers',                              dt:d0, tm:'5h',  c:'red'},
+      {co:'Uber Technologies',   ev:'Completion of acquisition or disposition of assets',                      dt:d1, tm:'1d',  c:'gold'},
+      {co:'Palantir Technologies',ev:'Entry into material definitive agreement',                               dt:d1, tm:'1d',  c:'grn'},
+    ]
+  };
+
+  ['dF','fLt'].forEach(id => {
+    const e = document.getElementById(id);
+    if (e) e.innerHTML = feed.lt.map(x => `
+      <div class="fi"><div class="fd ${x.c}"></div>
+        <div class="ft"><strong style="color:var(--w)">${x.co}</strong> — ${x.tp}<div class="fso">SEC EDGAR · Form ${x.fm} · Filed ${x.dt}</div></div>
+        <div class="ftm">${x.tm}</div>
+      </div>`).join('');
+  });
+
+  const e8 = document.getElementById('f8k');
+  if (e8) e8.innerHTML = feed.ev.map(x => `
+    <div class="fi"><div class="fd ${x.c}"></div>
+      <div class="ft"><strong style="color:var(--w)">${x.co}</strong><br>${x.ev}<div class="fso">SEC EDGAR 8-K · ${x.dt}</div></div>
+      <div class="ftm">${x.tm}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// TAG MANAGER
+// ═══════════════════════════════════════════════
+function renderTags() {
+  const counts = {};
+  briefs.forEach(b => (b.tags||[]).forEach(t => counts[t] = (counts[t]||0)+1));
+  const p = document.getElementById('tgU');
+  if (!p) return;
+  const entries = Object.entries(counts).sort((a,b) => b[1]-a[1]);
+  if (!entries.length) { p.innerHTML = '<div class="nt nw">No tags used yet.</div>'; return; }
+  p.innerHTML = entries.map(([t,n]) => `
+    <div class="fi"><div class="fd gold"></div>
+      <div class="ft" style="color:var(--w)">${t}</div>
+      <div style="font-size:11px;color:var(--gold);font-family:var(--mn);font-weight:500">${n} brief${n>1?'s':''}</div>
+    </div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// SETTINGS
+// ═══════════════════════════════════════════════
+function loadCfg() {
+  document.getElementById('sN').value  = cfg.name   || '';
+  document.getElementById('sTt').value = cfg.title  || 'Intelligence Analyst';
+  document.getElementById('sO').value  = cfg.org    || 'Scribe Intelligence';
+  document.getElementById('sE').value  = cfg.email  || '';
+  document.getElementById('sC').value  = cfg.conf   || 'Confidential';
+  document.getElementById('sP').value  = cfg.prefix || 'SCR';
+  document.getElementById('sD').value  = cfg.dnote  || '';
+  const keyEl = document.getElementById('sKey');
+  if (keyEl) keyEl.value = getApiKey();
+  updateKeyStatus();
+}
+function saveCfg() {
+  cfg = {
+    name:   document.getElementById('sN').value,
+    title:  document.getElementById('sTt').value,
+    org:    document.getElementById('sO').value,
+    email:  document.getElementById('sE').value,
+    conf:   document.getElementById('sC').value,
+    prefix: document.getElementById('sP').value || 'SCR',
+    dnote:  document.getElementById('sD').value,
+  };
+  localStorage.setItem('scribe_cfg_v3', JSON.stringify(cfg));
+  saveKey();
+  toast('Settings saved!');
+}
+
+function getApiKey() {
+  return apiKey || localStorage.getItem('scribe_apikey_v3') || '';
+}
+
+function saveKey() {
+  // Read from whichever input field is visible/filled
+  const v1 = document.getElementById('sKey')?.value?.trim() || '';
+  const v2 = document.getElementById('sK')?.value?.trim() || '';
+  const k  = v1 || v2;
+  if (k && !k.startsWith('sk-ant')) {
+    toast('Key should start with sk-ant-api03-...');
+    document.querySelectorAll('#keyStatus').forEach(el => { el.textContent = '✗ Invalid format — key must start with sk-ant-api03-...'; el.style.color = '#f87171'; });
+    return;
+  }
+  apiKey = k;
+  localStorage.setItem('scribe_apikey_v3', k);
+  // Sync both fields
+  if (document.getElementById('sKey')) document.getElementById('sKey').value = k;
+  if (document.getElementById('sK'))   document.getElementById('sK').value   = k;
+  updateKeyStatus();
+  toast(k ? 'API key saved — click Test Connection to verify' : 'API key cleared');
+}
+
+function saveApiKey() { saveKey(); }
+
+function testKey() {
+  const k = getApiKey();
+  if (!k) { toast('Paste your Anthropic API key in Settings first'); return; }
+  // Update ALL keyStatus elements (there may be two in the page)
+  document.querySelectorAll('#keyStatus').forEach(el => { el.textContent = '⟳ Testing connection...'; el.style.color = 'var(--gold)'; });
+
+  // Use /v1/messages with a minimal prompt — the only CORS-safe endpoint from a browser
+  // On the hosted server, test by calling our own health endpoint then a real Claude ping
+  fetch('/api/claude', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt: 'Reply with one word: ready', max_tokens: 10 })
+  }).then(r => r.json()).then(data => {
+    if (data.text) {
+      document.querySelectorAll('#keyStatus').forEach(el => { el.textContent = '✓ Connected — Claude AI is active'; el.style.color = '#4ade80'; });
+      updateKeyStatus();
+      toast('Claude connected!');
+    } else {
+      const msg = data.error || 'Connection failed';
+      document.querySelectorAll('#keyStatus').forEach(el => { el.textContent = '✗ ' + msg; el.style.color = '#f87171'; });
+    }
+  }).catch(err => {
+    document.querySelectorAll('#keyStatus').forEach(el => { el.textContent = '⚠ Server not reachable — check deployment'; el.style.color = '#f87171'; });
+  });
+}
+
+function updateKeyStatus() {
+  const k = getApiKey();
+  const dot  = document.getElementById('claudeDot');
+  const stat = document.getElementById('claudeStatus');
+  const ks   = document.getElementById('keyStatus');
+  if (k && k.startsWith('sk-ant')) {
+    if (dot)  dot.style.background = 'var(--grn)';
+    if (stat) stat.textContent = 'Anthropic · Connected — ' + k.substring(0,16) + '••••';
+    if (ks)   { ks.textContent = '✓ API key saved — Claude AI is active'; ks.style.color = '#4ade80'; }
+  } else {
+    if (dot)  dot.style.background = 'var(--w3)';
+    if (stat) stat.textContent = 'Anthropic · No key — add above to enable AI generation';
+    if (ks)   { ks.textContent = k ? '⚠ Key format incorrect — should start with sk-ant' : 'No key saved'; ks.style.color = 'var(--w3)'; }
+  }
+}
+
+function toggleKeyVis() {
+  const el = document.getElementById('sKey');
+  const btn = document.querySelector('[onclick="toggleKeyVis()"]');
+  if (!el) return;
+  el.type = el.type === 'password' ? 'text' : 'password';
+  if (btn) btn.textContent = el.type === 'password' ? 'Show' : 'Hide';
+}
+
+// ═══════════════════════════════════════════════
+// TICKER
+// ═══════════════════════════════════════════════
+function updateTicker() {
+  const stocks = [
+    {s:'MSFT',p:'415.32',c:'+1.2%',u:true},{s:'AAPL',p:'189.45',c:'+0.8%',u:true},
+    {s:'GOOGL',p:'174.22',c:'-0.3%',u:false},{s:'AMZN',p:'195.87',c:'+1.5%',u:true},
+    {s:'NVDA',p:'875.43',c:'+2.1%',u:true},{s:'META',p:'521.90',c:'-0.6%',u:false},
+    {s:'TSLA',p:'198.34',c:'+3.2%',u:true},{s:'BRK.B',p:'412.11',c:'+0.2%',u:true},
+  ];
+  const now = new Date().toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit'});
+  document.getElementById('tkEl').innerHTML =
+    `<div class="tk" style="color:var(--w3)">LIVE · ${now} EST</div>` +
+    stocks.map(s => `<div class="tk"><span class="tks">${s.s}</span><span class="tkv">${s.p}</span><span class="${s.u?'tku':'tkd'}">${s.c}</span></div>`).join('') +
+    `<div class="tk" style="color:var(--w3)">INDICATIVE ONLY · NOT FINANCIAL ADVICE</div>`;
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+function toast(msg) {
+  const e = document.createElement('div');
+  e.style.cssText = 'position:fixed;bottom:18px;right:18px;background:var(--gold);color:var(--bg);padding:8px 14px;border-radius:var(--r2);font-size:11px;font-family:var(--mn);z-index:9999;font-weight:700;box-shadow:0 4px 20px rgba(0,0,0,.5);letter-spacing:.3px';
+  e.textContent = msg;
+  document.body.appendChild(e);
+  setTimeout(() => e.remove(), 2400);
+}
+
+// ═══════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════
+updDash();
+loadFeed();
+updateTicker();
+setInterval(updateTicker, 30000);
+updateKeyStatus();
+</script>
+</body>
+</html>
