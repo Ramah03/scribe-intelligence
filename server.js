@@ -27,7 +27,7 @@ app.post('/api/claude', async (req, res) => {
   }
 
   try {
-    const { prompt, max_tokens = 4000 } = req.body;
+    const { prompt, max_tokens = 6000 } = req.body;
 
     if (!prompt) {
       return res.status(400).json({ error: 'prompt is required' });
