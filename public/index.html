@@ -970,74 +970,77 @@ async function autoFill() {
   st.innerHTML = '<span style="color:var(--gold)">Step 2/2 — Claude is writing all 15 sections...</span><span class="dots" style="margin-left:6px"><span></span><span></span><span></span></span>';
 
   // Step 2: Claude generates ALL sections in one call
+  // Keep sections concise to fit within token limit reliably
   const prompt = `You are a senior intelligence analyst at Scribe — The Intelligence Company.
 
-Generate a complete 15-section intelligence brief for the company below. Be specific, analytical, and senior-level. Avoid generic statements. Reference real known facts, market dynamics, and strategic signals where possible.
+Generate a complete intelligence brief for the company below. Be specific and senior-level.
 
 Company: ${co}
 Industry: ${ind || 'not specified'}
-Wikipedia context: ${wikiContext ? wikiContext.substring(0,600) : 'not available'}
-Report period: ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}
+Context: ${wikiContext ? wikiContext.substring(0,400) : 'not available'}
 
-For each section write:
-- "main": 3-5 sentences of substantive analysis. Be specific to this company.
-- "signal": One crisp sentence — the single most critical intelligence point for an executive.
+CRITICAL: Return ONLY a single valid JSON object. No text before or after. No markdown. No backticks. Keep each "main" to 2-3 sentences maximum and each "signal" to 1 sentence.
 
-Also provide:
-- "exec": A 2-3 sentence executive summary — the one thing a COO must know about this company right now.
-- "industry": The company's primary industry/sector (1-3 words)
-- "stage": The company stage (e.g. Public Company, Series B, Enterprise)
-- "metrics": 3 key metrics as comma-separated values (e.g. "$3.4T market cap, 160K employees, Founded 1975")
-
-Return ONLY valid JSON, no markdown, no backticks:
-{
-  "exec": "...",
-  "industry": "...",
-  "stage": "...",
-  "metrics": "...",
-  "s1":  {"main":"...","signal":"..."},
-  "s2":  {"main":"...","signal":"..."},
-  "s3":  {"main":"...","signal":"..."},
-  "s4":  {"main":"...","signal":"..."},
-  "s5":  {"main":"...","signal":"..."},
-  "s6":  {"main":"...","signal":"..."},
-  "s7":  {"main":"...","signal":"..."},
-  "s8":  {"main":"...","signal":"..."},
-  "s9":  {"main":"...","signal":"..."},
-  "s10": {"main":"...","signal":"..."},
-  "s11": {"main":"...","signal":"..."},
-  "s12": {"main":"...","signal":"..."},
-  "s13": {"main":"...","signal":"..."}
-}`;
+{"exec":"2-3 sentence executive summary","industry":"sector","stage":"company stage","metrics":"metric1, metric2, metric3","s1":{"main":"2-3 sentence analysis","signal":"1 sentence signal"},"s2":{"main":"...","signal":"..."},"s3":{"main":"...","signal":"..."},"s4":{"main":"...","signal":"..."},"s5":{"main":"...","signal":"..."},"s6":{"main":"...","signal":"..."},"s7":{"main":"...","signal":"..."},"s8":{"main":"...","signal":"..."},"s9":{"main":"...","signal":"..."},"s10":{"main":"...","signal":"..."},"s11":{"main":"...","signal":"..."},"s12":{"main":"...","signal":"..."},"s13":{"main":"...","signal":"..."}}`;
 
   try {
     const res = await fetch('/api/claude', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ prompt, max_tokens: 4000 })
+      body: JSON.stringify({ prompt, max_tokens: 6000 })
     });
 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Server error');
     const text = data.text || '';
 
+    // Robust JSON parsing — try multiple strategies
     let parsed = {};
-    try {
-      const match = text.match(/\{[\s\S]*\}/);
-      if (match) parsed = JSON.parse(match[0]);
-    } catch(pe) {
-      throw new Error('AI response could not be parsed. Please try again.');
+    let parseError = null;
+
+    // Strategy 1: direct parse
+    try { parsed = JSON.parse(text.trim()); }
+    catch(e1) {
+      // Strategy 2: extract largest JSON block
+      try {
+        const match = text.match(/\{[\s\S]*\}/);
+        if (match) parsed = JSON.parse(match[0]);
+      } catch(e2) {
+        // Strategy 3: strip any trailing incomplete section and try again
+        try {
+          const lastBrace = text.lastIndexOf(',"s');
+          if (lastBrace > 0) {
+            const truncated = text.substring(0, lastBrace) + '}';
+            parsed = JSON.parse(truncated);
+          }
+        } catch(e3) {
+          parseError = e3.message;
+        }
+      }
+    }
+
+    // Check we got actual content, not just empty object
+    const sids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
+    const gotContent = sids.some(k => parsed[k]?.main && parsed[k].main.length > 20);
+
+    if (!gotContent) {
+      // Show raw text in review so user can see what came back
+      st.innerHTML = '<span style="color:#f87171">⚠ Response received but could not be parsed. Showing raw output below — copy content manually.</span>';
+      document.getElementById('reviewScreen').style.display = 'block';
+      document.getElementById('reviewScreen').innerHTML = '<div class="card"><div class="ct" style="color:var(--gold);margin-bottom:8px">Raw AI Response (copy sections manually)</div><div class="air" style="white-space:pre-wrap;font-size:11px">' + text.replace(/</g,'&lt;') + '</div></div>';
+      btn.disabled = false;
+      btn.textContent = '⬡ Regenerate';
+      return;
     }
 
     // Apply all values to D (data store)
-    if (parsed.exec)     D.exec     = parsed.exec;
-    if (parsed.industry && !D.industry) D.industry = parsed.industry;
-    if (parsed.stage    && !D.stage)    D.stage    = parsed.stage;
-    if (parsed.metrics  && !D.metrics)  D.metrics  = parsed.metrics;
+    if (parsed.exec)                      D.exec     = parsed.exec;
+    if (parsed.industry && !D.industry)   D.industry = parsed.industry;
+    if (parsed.stage    && !D.stage)      D.stage    = parsed.stage;
+    if (parsed.metrics  && !D.metrics)    D.metrics  = parsed.metrics;
     if (!D.company) D.company = co;
     if (!D.period)  D.period  = new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'});
 
-    const sids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
     sids.forEach(k => {
       if (parsed[k]) {
         D[k]       = parsed[k].main   || '';
@@ -1046,12 +1049,12 @@ Return ONLY valid JSON, no markdown, no backticks:
       }
     });
 
-    // Show REVIEW screen instead of jumping straight into builder
+    // Show REVIEW screen
     showReview(co, parsed, sids);
     st.innerHTML = '<span style="color:#4ade80">✓ All 15 sections generated — review below</span>';
 
   } catch(err) {
-    st.innerHTML = `<span style="color:#f87171">⚠ ${err.message || 'Error connecting to Claude AI'}</span>`;
+    st.innerHTML = '<span style="color:#f87171">⚠ ' + (err.message || 'Error connecting to Claude AI') + '</span>';
     renderB();
   }
 
