@@ -73,7 +73,7 @@ body { font-family: var(--ss); background: var(--bg); color: var(--w); font-size
 .tks { color: var(--w3); } .tkv { color: var(--w2); } .tku { color: #4ade80; } .tkd { color: #f87171; }
 
 /* ── CONTENT ── */
-.content { flex: 1; overflow-y: auto; padding: 20px 22px; }
+.content { flex: 1; overflow-y: auto; padding: 20px 22px; scroll-behavior: smooth; }
 
 /* ── PAGES ── */
 .page { display: none; }
@@ -942,7 +942,7 @@ async function autoFill() {
   const rs  = document.getElementById('reviewScreen');
   const bc  = document.getElementById('bldContent');
 
-  if (!getApiKey()) { toast('Add your Anthropic API key in Settings first'); return; }
+  // API key lives on server — no browser key check needed
   btn.disabled = true;
   btn.textContent = '⬡ Generating...';
   st.innerHTML = '<span style="color:var(--gold)">Step 1/2 — Fetching Wikipedia context...</span>';
@@ -950,7 +950,7 @@ async function autoFill() {
   // Step 1: Wikipedia for company context
   let wikiContext = '';
   try {
-    const wr = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${encodeURIComponent(co)}`);
+    const wr = await fetch(`/api/wiki/${encodeURIComponent(co)}`);
     if (wr.ok) {
       const wd = await wr.json();
       wikiContext = wd.extract || '';
@@ -1157,7 +1157,15 @@ function initAI() {
 }
 function tgAI(el, id) { el.classList.toggle('on'); if (el.classList.contains('on')) { if (!selAI.includes(id)) selAI.push(id); } else { selAI = selAI.filter(s => s !== id); } }
 function genAllAI() { selAI = AIS.map(s => s.id); initAI(); genAI(); }
-function applyAllAI() { Object.keys(aiCache).forEach(k => { D[k] = aiCache[k].main || ''; D[k+'s'] = aiCache[k].signal || ''; }); toast('All AI sections applied to brief'); go('builder'); }
+function applyAllAI() {
+  Object.keys(aiCache).forEach(k => {
+    D[k]       = aiCache[k].main   || '';
+    D[k + 's'] = aiCache[k].signal || '';
+  });
+  toast('All AI sections applied — review your brief');
+  step = 0;
+  go('preview');
+}
 
 async function genAI() {
   const co  = document.getElementById('aiCo').value.trim();
@@ -1218,6 +1226,7 @@ Only include the requested sections.`;
     });
 
     const generated = Object.keys(parsed).length;
+    setTimeout(() => { res.scrollIntoView({ behavior: 'smooth', block: 'start' }); }, 100);
     res.innerHTML = `
       <div class="nt no" style="margin-bottom:12px">⬡ Generated ${generated} section${generated>1?'s':''} for <strong>${co}</strong></div>
       ${Object.keys(parsed).map(k => {
