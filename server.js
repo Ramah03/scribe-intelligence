@@ -10,175 +10,84 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// ── HEALTH CHECK ──────────────────────────────
 app.get('/health', (req, res) => {
-  res.json({ status: 'ok', service: 'Scribe Intelligence Platform', version: '1.0.0' });
+  res.json({ status: 'ok', version: '3.0.0' });
 });
 
-// ── FULL DIAGNOSTICS ─────────────────────────
-// Runs all checks server-side and returns detailed results
 app.get('/api/diagnostics', async (req, res) => {
-  const results = [];
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
-  // CHECK 1: Server is running
-  results.push({
-    id: 'server',
-    name: 'Server Running',
-    status: 'pass',
-    message: 'Scribe server is online and responding.',
-    fix: null
-  });
-
-  // CHECK 2: API key present
-  if (!apiKey) {
-    results.push({
-      id: 'apikey',
-      name: 'Anthropic API Key',
-      status: 'fail',
-      message: 'ANTHROPIC_API_KEY environment variable is not set.',
-      fix: 'Go to render.com → your service → Environment → add ANTHROPIC_API_KEY with your key from console.anthropic.com'
-    });
-  } else if (!apiKey.startsWith('sk-ant')) {
-    results.push({
-      id: 'apikey',
-      name: 'Anthropic API Key',
-      status: 'warn',
-      message: 'API key is set but format looks unusual (should start with sk-ant-).',
-      fix: 'Double-check your key at console.anthropic.com → API Keys. Copy it fresh and update in Render environment.'
-    });
+  const key = process.env.ANTHROPIC_API_KEY;
+  const checks = [];
+  checks.push({ id: 'server', name: 'Server Running', status: 'pass', message: 'Scribe server is online.', fix: null });
+  if (!key) {
+    checks.push({ id: 'apikey', name: 'Anthropic API Key', status: 'fail', message: 'ANTHROPIC_API_KEY is not set.', fix: 'Go to render.com your service Environment add ANTHROPIC_API_KEY' });
+    checks.push({ id: 'claude', name: 'Claude AI', status: 'skip', message: 'Skipped no API key.', fix: null });
   } else {
-    results.push({
-      id: 'apikey',
-      name: 'Anthropic API Key',
-      status: 'pass',
-      message: 'API key is present and correctly formatted (' + apiKey.substring(0,16) + '••••).',
-      fix: null
-    });
-  }
-
-  // CHECK 3: Claude API reachability
-  if (apiKey) {
+    checks.push({ id: 'apikey', name: 'Anthropic API Key', status: 'pass', message: 'Key present: ' + key.substring(0, 16) + '...', fix: null });
     try {
-      const claudeRes = await fetch('https://api.anthropic.com/v1/messages', {
+      const r = await fetch('https://api.anthropic.com/v1/messages', {
         method: 'POST',
-        headers: { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+        headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
         body: JSON.stringify({ model: 'claude-haiku-4-5-20251001', max_tokens: 10, messages: [{ role: 'user', content: 'hi' }] })
       });
-      if (claudeRes.ok) {
-        results.push({ id: 'claude', name: 'Claude AI Connection', status: 'pass', message: 'Successfully connected to Claude claude-sonnet-4-20250514.', fix: null });
-      } else if (claudeRes.status === 401) {
-        results.push({ id: 'claude', name: 'Claude AI Connection', status: 'fail', message: 'API key rejected — authentication failed (401).', fix: 'Your API key may be invalid or expired. Go to console.anthropic.com → API Keys → create a new key and update it in Render.' });
-      } else if (claudeRes.status === 429) {
-        results.push({ id: 'claude', name: 'Claude AI Connection', status: 'fail', message: 'Rate limit or insufficient credits (429).', fix: 'Go to console.anthropic.com → Plans & Billing → add more credits. $5 is enough for hundreds of briefs.' });
+      if (r.ok) {
+        checks.push({ id: 'claude', name: 'Claude AI', status: 'pass', message: 'Connected to claude-sonnet-4-20250514.', fix: null });
+      } else if (r.status === 401) {
+        checks.push({ id: 'claude', name: 'Claude AI', status: 'fail', message: 'API key rejected (401).', fix: 'Create a new key at console.anthropic.com and update in Render.' });
+      } else if (r.status === 429) {
+        checks.push({ id: 'claude', name: 'Claude AI', status: 'fail', message: 'Insufficient credits (429).', fix: 'Add credits at console.anthropic.com Plans and Billing.' });
       } else {
-        const errData = await claudeRes.json().catch(() => ({}));
-        results.push({ id: 'claude', name: 'Claude AI Connection', status: 'fail', message: 'Claude API returned error ' + claudeRes.status + ': ' + (errData?.error?.message || 'unknown'), fix: 'Check console.anthropic.com for account issues.' });
+        checks.push({ id: 'claude', name: 'Claude AI', status: 'fail', message: 'Claude API error ' + r.status, fix: 'Check console.anthropic.com for account issues.' });
       }
     } catch (e) {
-      results.push({ id: 'claude', name: 'Claude AI Connection', status: 'fail', message: 'Could not reach Anthropic servers: ' + e.message, fix: 'Render server may have network restrictions. Check your service logs on render.com.' });
+      checks.push({ id: 'claude', name: 'Claude AI', status: 'fail', message: 'Cannot reach Anthropic: ' + e.message, fix: 'Check Render logs.' });
     }
-  } else {
-    results.push({ id: 'claude', name: 'Claude AI Connection', status: 'skip', message: 'Skipped — API key not set.', fix: null });
   }
-
-  // CHECK 4: Wikipedia reachability
   try {
-    const wikiRes = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/Microsoft');
-    if (wikiRes.ok) {
-      results.push({ id: 'wiki', name: 'Wikipedia Data Source', status: 'pass', message: 'Wikipedia API is reachable and returning data.', fix: null });
-    } else {
-      results.push({ id: 'wiki', name: 'Wikipedia Data Source', status: 'warn', message: 'Wikipedia returned status ' + wikiRes.status + '. Company auto-fill may not work.', fix: 'This is usually temporary. Try again in a few minutes.' });
-    }
+    const wr = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/Microsoft');
+    checks.push({ id: 'wiki', name: 'Wikipedia', status: wr.ok ? 'pass' : 'warn', message: wr.ok ? 'Wikipedia reachable.' : 'Status ' + wr.status, fix: wr.ok ? null : 'Auto-fill may not work temporarily.' });
   } catch (e) {
-    results.push({ id: 'wiki', name: 'Wikipedia Data Source', status: 'warn', message: 'Wikipedia unreachable: ' + e.message, fix: 'Auto-fill will not work but brief generation still will. Usually resolves itself.' });
+    checks.push({ id: 'wiki', name: 'Wikipedia', status: 'warn', message: 'Unreachable: ' + e.message, fix: 'Auto-fill will not work but generation will.' });
   }
-
-  // CHECK 5: Environment
-  results.push({
-    id: 'env',
-    name: 'Environment',
-    status: 'pass',
-    message: 'Node ' + process.version + ' · ' + (process.env.NODE_ENV || 'development') + ' · Port ' + PORT,
-    fix: null
-  });
-
-  const allPass = results.every(r => r.status === 'pass' || r.status === 'skip');
-  const hasFail = results.some(r => r.status === 'fail');
-
-  res.json({
-    overall: hasFail ? 'fail' : allPass ? 'pass' : 'warn',
-    timestamp: new Date().toISOString(),
-    checks: results
-  });
+  checks.push({ id: 'env', name: 'Environment', status: 'pass', message: 'Node ' + process.version + ' port ' + PORT, fix: null });
+  const hasFail = checks.some(c => c.status === 'fail');
+  const hasWarn = checks.some(c => c.status === 'warn');
+  res.json({ overall: hasFail ? 'fail' : hasWarn ? 'warn' : 'pass', timestamp: new Date().toISOString(), checks });
 });
 
-// ── ANTHROPIC PROXY ───────────────────────────
-// All Claude API calls go through here — no CORS issues, API key stays on server
 app.post('/api/claude', async (req, res) => {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-
-  if (!apiKey) {
-    return res.status(500).json({
-      error: 'ANTHROPIC_API_KEY environment variable not set. Add it in your Render dashboard under Environment.'
-    });
-  }
-
+  const key = process.env.ANTHROPIC_API_KEY;
+  if (!key) return res.status(500).json({ error: 'ANTHROPIC_API_KEY not set in Render environment.' });
+  const { prompt, max_tokens } = req.body;
+  if (!prompt) return res.status(400).json({ error: 'prompt required' });
   try {
-    const { prompt, max_tokens = 6000 } = req.body;
-
-    if (!prompt) {
-      return res.status(400).json({ error: 'prompt is required' });
-    }
-
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
-      headers: {
-        'x-api-key': apiKey,
-        'anthropic-version': '2023-06-01',
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      headers: { 'x-api-key': key, 'anthropic-version': '2023-06-01', 'Content-Type': 'application/json' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: max_tokens || 6000, messages: [{ role: 'user', content: prompt }] })
     });
-
-    const data = await response.json();
-
-    if (!response.ok) {
-      return res.status(response.status).json({
-        error: data?.error?.message || `Anthropic API error ${response.status}`
-      });
-    }
-
-    const text = data.content?.find(c => c.type === 'text')?.text || '';
-    res.json({ text });
-
-  } catch (err) {
-    console.error('Claude API error:', err);
-    res.status(500).json({ error: err.message || 'Internal server error' });
+    const data = await r.json();
+    if (!r.ok) return res.status(r.status).json({ error: data.error ? data.error.message : 'Error ' + r.status });
+    const text = data.content && data.content[0] ? data.content[0].text : '';
+    res.json({ text: text });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
   }
 });
 
-// ── WIKIPEDIA PROXY ───────────────────────────
 app.get('/api/wiki/:query', async (req, res) => {
   try {
-    const query = encodeURIComponent(req.params.query);
-    const response = await fetch(`https://en.wikipedia.org/api/rest_v1/page/summary/${query}`);
-    const data = await response.json();
+    const r = await fetch('https://en.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(req.params.query));
+    const data = await r.json();
     res.json(data);
-  } catch (err) {
-    res.status(500).json({ error: 'Wikipedia fetch failed' });
+  } catch (e) {
+    res.status(500).json({ error: 'Wikipedia failed' });
   }
 });
 
-// ── FALLBACK → SERVE APP ──────────────────────
 app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-app.listen(PORT, () => {
-  console.log(`Scribe Intelligence Platform running on port ${PORT}`);
+app.listen(PORT, function() {
+  console.log('Scribe running on port ' + PORT);
 });
