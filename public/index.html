@@ -301,12 +301,14 @@ textarea { min-height:82px; resize:vertical; line-height:1.65; }
     <div class="ni" onclick="go('builder')"><span class="nic">✦</span>New Brief</div>
     <div class="ni" onclick="go('briefs')"><span class="nic">▤</span>All Briefs<span class="nbdg" id="nc">0</span></div>
     <div class="ni" onclick="go('preview')"><span class="nic">◻</span>Preview Brief</div>
+    <div class="ni" onclick="go('review')"><span class="nic">✎</span>Review & Edit</div>
     <div class="nlbl">Intelligence</div>
     <div class="ni" onclick="go('aigen')"><span class="nic">⬡</span>AI Generator</div>
     <div class="ni" onclick="go('lookup')"><span class="nic">◎</span>Company Lookup</div>
     <div class="ni" onclick="go('feed')"><span class="nic">◉</span>Live Data Feed</div>
     <div class="ni" onclick="go('tags')"><span class="nic">◆</span>Tag Manager</div>
     <div class="nlbl">Developer</div>
+    <div class="ni" onclick="go('diagnostics')"><span class="nic">⚕</span>Diagnostics</div>
     <div class="ni" onclick="go('api')"><span class="nic">{ }</span>Scribe API</div>
     <div class="ni" onclick="go('settings')"><span class="nic">◇</span>Settings</div>
   </nav>
@@ -386,6 +388,16 @@ textarea { min-height:82px; resize:vertical; line-height:1.65; }
       <button class="btn btn-g" onclick="sNext()" id="bNx">Next →</button>
     </div>
   </div>
+</div>
+
+<!-- ═══ REVIEW ═══ -->
+<div class="page" id="page-review">
+  <div style="display:flex;gap:7px;margin-bottom:13px;flex-wrap:wrap">
+    <button class="btn btn-d" onclick="go('builder')">← Back</button>
+    <button class="btn btn-g" onclick="approveAndPreview()">✓ Approve & Preview</button>
+    <button class="btn btn-d" onclick="go('preview')">Preview as-is →</button>
+  </div>
+  <div id="reviewPageContent"></div>
 </div>
 
 <!-- ═══ ALL BRIEFS ═══ -->
@@ -625,6 +637,17 @@ textarea { min-height:82px; resize:vertical; line-height:1.65; }
   </div>
 </div>
 
+<!-- ═══ DIAGNOSTICS ═══ -->
+<div class="page" id="page-diagnostics">
+  <div class="nt ni2" style="margin-bottom:14px">Scribe runs a full system check — server, API key, Claude AI, and data sources. Checks run automatically when you open this page.</div>
+  <div style="display:flex;gap:8px;margin-bottom:16px">
+    <button class="btn btn-g" onclick="runDiagnostics()">↻ Run Diagnostics</button>
+    <span id="diagTime" style="font-size:10px;color:var(--w3);font-family:var(--mn);align-self:center"></span>
+  </div>
+  <div id="diagOverall" style="margin-bottom:14px"></div>
+  <div id="diagResults"></div>
+</div>
+
 <!-- ═══ SETTINGS ═══ -->
 <div class="page" id="page-settings">
 
@@ -751,6 +774,8 @@ const PAGE_META = {
   tags:      ['Tag Manager',            'DISTRIBUTION SYSTEM'],
   api:       ['Scribe API',             'DEVELOPER DOCUMENTATION'],
   settings:  ['Settings',              'PLATFORM CONFIGURATION'],
+  review:    ['Review Brief',           'EDIT BEFORE PRINTING'],
+  diagnostics:['Diagnostics',           'SYSTEM HEALTH CHECK'],
 };
 
 // ═══════════════════════════════════════════════
@@ -764,7 +789,7 @@ function go(id) {
   if (pg) pg.classList.add('active');
 
   // Sidebar highlight
-  const order = ['dashboard','builder','briefs','preview','aigen','lookup','feed','tags','api','settings'];
+  const order = ['dashboard','builder','briefs','preview','review','aigen','lookup','feed','tags','diagnostics','api','settings'];
   const idx = order.indexOf(id);
   if (idx >= 0) document.querySelectorAll('.ni')[idx]?.classList.add('on');
 
@@ -792,7 +817,7 @@ function go(id) {
   }
 
   // Page init
-  const inits = { dashboard:updDash, builder:renderB, briefs:renderBL, preview:renderPV, aigen:initAI, feed:loadFeed, tags:renderTags, settings:loadCfg };
+  const inits = { dashboard:updDash, builder:renderB, briefs:renderBL, preview:renderPV, review:renderReviewPage, aigen:initAI, feed:loadFeed, tags:renderTags, diagnostics:runDiagnostics, settings:loadCfg };
   if (inits[id]) inits[id]();
 }
 
@@ -1049,9 +1074,11 @@ CRITICAL: Return ONLY a single valid JSON object. No text before or after. No ma
       }
     });
 
-    // Show REVIEW screen
-    showReview(co, parsed, sids);
-    st.innerHTML = '<span style="color:#4ade80">✓ All 15 sections generated — review below</span>';
+    // Go straight to preview — user can click Edit to go section by section
+    st.innerHTML = '<span style="color:#4ade80">✓ All 15 sections generated!</span>';
+    setTimeout(() => {
+      go('preview');
+    }, 400);
 
   } catch(err) {
     st.innerHTML = '<span style="color:#f87171">⚠ ' + (err.message || 'Error connecting to Claude AI') + '</span>';
@@ -1063,92 +1090,66 @@ CRITICAL: Return ONLY a single valid JSON object. No text before or after. No ma
 }
 
 function showReview(co, parsed, sids) {
-  const rs  = document.getElementById('reviewScreen');
-  const bc  = document.getElementById('bldContent');
-  bc.innerHTML = '';
+  // Store parsed data then navigate to dedicated review page
+  go('review');
+}
 
+function renderReviewPage() {
+  const sids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
   const AIS_MAP = {s1:'Competitive Landscape',s2:'Market Acceptability',s3:'Product Efficiency',s4:'Acquisition & Merger Signals',s5:'Risks & Vulnerabilities',s6:'Financial Position',s7:'Leadership & C-Suite',s8:'Operations & Structure',s9:'Technology & Innovation',s10:'Regulatory & Compliance',s11:'Market Sentiment',s12:'Strategic Forecast',s13:'Analyst Recommendations'};
+  const co = D.company || 'Company';
+  const c2 = document.getElementById('reviewPageContent');
+  if (!c2) return;
 
-  rs.style.display = 'block';
-  rs.innerHTML = `
+  c2.innerHTML = `
     <div class="card card-g" style="margin-bottom:12px">
-      <div class="ch">
-        <div>
-          <div class="ct" style="color:var(--gold);font-size:14px">Review: ${co} Intelligence Brief</div>
-          <div class="cm">All 15 sections generated by Claude. Edit any field below, then click Approve & Build.</div>
-        </div>
-        <div style="display:flex;gap:7px">
-          <button class="btn btn-g" onclick="approveReview()">✓ Approve & Build Brief</button>
-          <button class="btn btn-d" onclick="goBuilderManual()">Edit Section by Section</button>
-        </div>
+      <div class="ch"><div><div class="ct" style="color:var(--gold)">Review: ${co} Intelligence Brief</div><div class="cm">Edit any field, then click Approve & Preview.</div></div></div>
+      <div style="margin-bottom:10px">
+        <div class="cm" style="margin-bottom:5px">EXECUTIVE SUMMARY</div>
+        <textarea id="rv_exec" style="min-height:60px" oninput="D['exec']=this.value">${D.exec||''}</textarea>
       </div>
-
-      <div style="margin-bottom:12px;padding:10px 12px;background:var(--bg3);border-radius:var(--r);border:1px solid var(--bdr)">
-        <div class="cm" style="margin-bottom:6px">EXECUTIVE SUMMARY</div>
-        <textarea id="rv_exec" style="min-height:60px" oninput="D['exec']=this.value">${parsed.exec||''}</textarea>
-      </div>
-      <div class="fr2" style="margin-bottom:10px">
-        <div><label>Company</label><input type="text" id="rv_company" value="${D.company||co}" oninput="D['company']=this.value"></div>
+      <div class="fr2">
+        <div><label>Company</label><input type="text" id="rv_company" value="${D.company||''}" oninput="D['company']=this.value"></div>
         <div><label>Industry</label><input type="text" id="rv_industry" value="${D.industry||''}" oninput="D['industry']=this.value"></div>
         <div><label>Stage</label><input type="text" id="rv_stage" value="${D.stage||''}" oninput="D['stage']=this.value"></div>
         <div><label>Key Metrics</label><input type="text" id="rv_metrics" value="${D.metrics||''}" oninput="D['metrics']=this.value"></div>
       </div>
     </div>
-
     ${sids.map((k,i) => {
-      const c = PC[k] || PC.s1;
-      const sec = parsed[k] || {main:'',signal:''};
-      return `<div class="card" style="margin-bottom:8px;border-left:3px solid ${c.br}">
-        <div class="ch" style="padding-bottom:7px;margin-bottom:8px">
-          <div style="display:flex;align-items:center;gap:7px">
-            <div style="width:19px;height:19px;border-radius:50%;background:${c.br};color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mn);flex-shrink:0">${i+1}</div>
-            <div class="ct">${AIS_MAP[k]}</div>
-          </div>
-        </div>
-        <div style="margin-bottom:8px">
-          <label>Analysis</label>
-          <textarea id="rv_${k}" oninput="D['${k}']=this.value" style="min-height:72px">${sec.main||''}</textarea>
-        </div>
-        <div>
-          <label>Key Signal</label>
-          <input type="text" id="rv_${k}s" value="${sec.signal||''}" oninput="D['${k}s']=this.value">
-        </div>
-      </div>`;
+      const c = PC[k]||PC.s1;
+      return '<div class="card" style="margin-bottom:8px;border-left:3px solid '+c.br+'">'
+        +'<div class="ch" style="padding-bottom:6px;margin-bottom:7px">'
+        +'<div style="display:flex;align-items:center;gap:7px">'
+        +'<div style="width:18px;height:18px;border-radius:50%;background:'+c.br+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:9px;font-family:var(--mn)">'+(i+1)+'</div>'
+        +'<div class="ct">'+AIS_MAP[k]+'</div></div></div>'
+        +'<div style="margin-bottom:7px"><label>Analysis</label>'
+        +'<textarea id="rv_'+k+'" oninput="D[''+k+'']=this.value" style="min-height:68px">'+( D[k]||'')+'</textarea></div>'
+        +'<div><label>Key Signal</label>'
+        +'<input type="text" id="rv_'+k+'s" value="'+(D[k+'s']||'')+'" oninput="D[''+k+'s']=this.value"></div>'
+        +'</div>';
     }).join('')}
-
-    <div style="display:flex;gap:7px;margin-top:14px;margin-bottom:4px">
-      <button class="btn btn-g" onclick="approveReview()">✓ Approve & Build Brief</button>
-      <button class="btn btn-d" onclick="goBuilderManual()">Edit Section by Section</button>
-      <button class="btn btn-d" onclick="previewFromReview()">Preview Now →</button>
+    <div style="display:flex;gap:7px;margin-top:12px">
+      <button class="btn btn-g" onclick="approveAndPreview()">✓ Approve & Preview</button>
+      <button class="btn btn-d" onclick="go('preview')">Preview as-is</button>
     </div>`;
 }
 
-function approveReview() {
-  // Sync all review fields into D one final time
+function approveAndPreview() {
   const sids = ['s1','s2','s3','s4','s5','s6','s7','s8','s9','s10','s11','s12','s13'];
   ['exec','company','industry','stage','metrics'].forEach(id => {
-    const e = document.getElementById('rv_' + id); if (e) D[id] = e.value;
+    const e = document.getElementById('rv_'+id); if(e) D[id]=e.value;
   });
   sids.forEach(k => {
-    const em = document.getElementById('rv_' + k);   if (em) D[k]       = em.value;
-    const es = document.getElementById('rv_' + k+'s'); if (es) D[k+'s'] = es.value;
+    const em = document.getElementById('rv_'+k);   if(em) D[k]    = em.value;
+    const es = document.getElementById('rv_'+k+'s'); if(es) D[k+'s']= es.value;
   });
-  document.getElementById('reviewScreen').style.display = 'none';
-  step = 0;
-  renderB();
-  toast('Brief approved — review section by section or go to Preview');
-}
-
-function previewFromReview() {
-  approveReview();
   go('preview');
+  toast('Brief approved!');
 }
 
-function goBuilderManual() {
-  document.getElementById('reviewScreen').style.display = 'none';
-  step = 0;
-  renderB();
-}
+function approveReview() { approveAndPreview(); }
+function previewFromReview() { approveAndPreview(); }
+function goBuilderManual() { step=0; go('builder'); }
 
 // ═══════════════════════════════════════════════
 // AI GENERATOR
@@ -1672,6 +1673,59 @@ function updateTicker() {
     `<div class="tk" style="color:var(--w3)">LIVE · ${now} EST</div>` +
     stocks.map(s => `<div class="tk"><span class="tks">${s.s}</span><span class="tkv">${s.p}</span><span class="${s.u?'tku':'tkd'}">${s.c}</span></div>`).join('') +
     `<div class="tk" style="color:var(--w3)">INDICATIVE ONLY · NOT FINANCIAL ADVICE</div>`;
+}
+
+// ═══════════════════════════════════════════════
+// DIAGNOSTICS
+// ═══════════════════════════════════════════════
+async function runDiagnostics() {
+  const overallEl = document.getElementById('diagOverall');
+  const resultsEl = document.getElementById('diagResults');
+  const timeEl    = document.getElementById('diagTime');
+  if (!overallEl || !resultsEl) return;
+
+  overallEl.innerHTML = '<div class="nt ni2">⟳ Running checks...</div>';
+  resultsEl.innerHTML = '';
+
+  try {
+    const res  = await fetch('/api/diagnostics');
+    const data = await res.json();
+
+    // Overall status banner
+    const oBg  = data.overall==='pass' ? 'var(--grn)' : data.overall==='warn' ? 'var(--gold)' : 'var(--red)';
+    const oMsg = data.overall==='pass' ? '✓ All systems operational' : data.overall==='warn' ? '⚠ System online with warnings' : '✗ One or more critical issues detected';
+    overallEl.innerHTML = '<div style="background:'+oBg+';color:#fff;padding:10px 14px;border-radius:var(--r2);font-size:13px;font-weight:600;font-family:var(--mn)">'+oMsg+'</div>';
+
+    if (timeEl) timeEl.textContent = 'Last checked: ' + new Date(data.timestamp).toLocaleTimeString();
+
+    // Individual checks
+    resultsEl.innerHTML = data.checks.map(c => {
+      const dotCol = c.status==='pass' ? 'var(--grn)' : c.status==='warn' ? 'var(--gold)' : c.status==='skip' ? 'var(--w3)' : 'var(--red)';
+      const icon   = c.status==='pass' ? '✓' : c.status==='warn' ? '⚠' : c.status==='skip' ? '—' : '✗';
+      const msgCol = c.status==='pass' ? '#4ade80' : c.status==='warn' ? 'var(--gold2)' : c.status==='skip' ? 'var(--w3)' : '#f87171';
+      return '<div class="card" style="margin-bottom:8px;border-left:3px solid '+dotCol+'">'
+        +'<div style="display:flex;align-items:flex-start;gap:10px">'
+        +'<div style="width:22px;height:22px;border-radius:50%;background:'+dotCol+';color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0;margin-top:1px">'+icon+'</div>'
+        +'<div style="flex:1">'
+        +'<div style="font-size:12px;font-weight:500;color:var(--w);margin-bottom:3px">'+c.name+'</div>'
+        +'<div style="font-size:11px;color:'+msgCol+';font-family:var(--mn);margin-bottom:'+(c.fix?'8px':'0')+'">'+c.message+'</div>'
+        +(c.fix ? '<div style="background:rgba(201,168,76,.08);border:1px solid var(--bdr3);border-radius:var(--r);padding:7px 10px;font-size:11px;color:var(--gold2);line-height:1.6"><strong style="color:var(--gold)">How to fix:</strong> '+c.fix+'</div>' : '')
+        +'</div></div></div>';
+    }).join('');
+
+    // Auto-update sidebar AI status dot
+    const claudeCheck = data.checks.find(c => c.id === 'claude');
+    if (claudeCheck) {
+      const dot  = document.getElementById('claudeDot');
+      const stat = document.getElementById('claudeStatus');
+      if (dot)  dot.style.background  = claudeCheck.status==='pass' ? 'var(--grn)' : 'var(--red)';
+      if (stat) stat.textContent = claudeCheck.status==='pass' ? 'Connected — claude-sonnet-4-20250514 active' : claudeCheck.message;
+    }
+
+  } catch (err) {
+    overallEl.innerHTML = '<div class="nt ne">Could not reach diagnostics endpoint. The server may be restarting — wait 30 seconds and try again.</div>';
+    resultsEl.innerHTML = '<div class="card"><div class="ct" style="color:#f87171">Connection Error</div><div class="cm" style="margin-top:4px">'+err.message+'</div><div class="nt nw" style="margin-top:10px"><strong>How to fix:</strong> Go to render.com and check your service is running (green dot). If it shows "Suspended", click Resume. If build failed, check the Logs tab for errors.</div></div>';
+  }
 }
 
 // ═══════════════════════════════════════════════
