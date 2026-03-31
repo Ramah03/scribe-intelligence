@@ -1019,28 +1019,17 @@ CRITICAL: Return ONLY a single valid JSON object. No text before or after. No ma
     if (!res.ok) throw new Error(data.error || 'Server error');
     const text = data.text || '';
 
-    // Robust JSON parsing — try multiple strategies
+    // JSON parsing — try clean text first, then extract block
     let parsed = {};
-    let parseError = null;
-
-    // Strategy 1: direct parse
-    try { parsed = JSON.parse(text.trim()); }
-    catch(e1) {
-      // Strategy 2: extract largest JSON block
+    const cleanText = text.trim().replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+    try {
+      parsed = JSON.parse(cleanText);
+    } catch(e1) {
       try {
         const match = text.match(/\{[\s\S]*\}/);
         if (match) parsed = JSON.parse(match[0]);
       } catch(e2) {
-        // Strategy 3: strip any trailing incomplete section and try again
-        try {
-          const lastBrace = text.lastIndexOf(',"s');
-          if (lastBrace > 0) {
-            const truncated = text.substring(0, lastBrace) + '}';
-            parsed = JSON.parse(truncated);
-          }
-        } catch(e3) {
-          parseError = e3.message;
-        }
+        parsed = {};
       }
     }
 
@@ -1279,7 +1268,7 @@ async function doLookup() {
           <div class="dph"><div class="dpt">Company Profile</div><span class="sbdg">WIKIPEDIA</span></div>
           <p style="font-size:12px;line-height:1.75;color:var(--w2)">${d.extract || 'No description available.'}</p>
         </div>
-        <div class="nt ni2">SEC Filings: <a href="https://www.sec.gov/cgi-bin/browse-edgar?company=${encodeURIComponent(q)}&action=getcompany&type=10-K" target="_blank" style="color:var(--gold)">Search SEC EDGAR →</a></div>
+        <div class="nt ni2">SEC Filings: <a href="#" onclick="window.open('https://www.sec.gov/cgi-bin/browse-edgar?company='+encodeURIComponent(document.getElementById('lkQ').value)+'&action=getcompany&type=10-K','_blank');return false;" style="color:var(--gold)">Search SEC EDGAR →</a></div>
       </div>`;
   } catch {
     r.innerHTML = `<div class="nt ne">No results found for "${q}". Try a different company name or ticker symbol.</div>`;
